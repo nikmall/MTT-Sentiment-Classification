@@ -28,6 +28,7 @@ def main():
     device = torch.device("cpu")
     torch.set_default_tensor_type('torch.FloatTensor')
     if torch.cuda.is_available():
+        print("using cuda")
         torch.cuda.manual_seed(seed)
         torch.set_default_tensor_type('torch.cuda.FloatTensor')
         device = torch.device("cuda")
