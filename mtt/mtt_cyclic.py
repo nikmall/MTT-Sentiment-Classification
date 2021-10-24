@@ -52,17 +52,17 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device)
     scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=param_mtt['lr_patience'], factor=0.1, verbose=True)
 
 
-    train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, param_mtt, scheduler)
+    train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, param_mtt, scheduler, device)
 
 
-def train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, params, scheduler):
+def train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, params, scheduler, device):
     best_valid_loss = float('inf')
 
     for epoch in range(0, N_EPOCHS):
         start_time = time.time()
 
-        train_loss, pred_train, labels_train = train(model, train_loader, optimizer, criterion, params)
-        valid_loss, pred_val, labels_val = evaluate(model, valid_loader, criterion, params)
+        train_loss, pred_train, labels_train = train(model, train_loader, optimizer, criterion, params, device)
+        valid_loss, pred_val, labels_val = evaluate(model, valid_loader, criterion, params, device)
         scheduler.step(valid_loss)
         end_time = time.time()
 
@@ -83,7 +83,7 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
     # finally for test
     model.load_state_dict(torch.load('mtt_cyclic.pt'))
 
-    test_loss, pred_test, labels_test = evaluate(model, test_loader, criterion, params)
+    test_loss, pred_test, labels_test = evaluate(model, test_loader, criterion, params, device)
     mosei_scores(pred_test, labels_test, message='Final Test Scores')
 
 
@@ -91,7 +91,7 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
 
 
 
-def train(model, train_loader, optimizer, criterion, params, clip=1):
+def train(model, train_loader, optimizer, criterion, params, device, clip=1):
 
     model.train()
     epoch_loss = 0
@@ -100,6 +100,10 @@ def train(model, train_loader, optimizer, criterion, params, clip=1):
 
     for i_batch, (batch_X, batch_Y, batch_META) in enumerate(train_loader):
         sample_ind, text, audio, vision = batch_X
+
+        text = text.to(device=device)
+        audio = audio.to(device=device)
+        vision = vision.to(device=device)
 
         src = text
         trg = audio
@@ -132,7 +136,7 @@ def train(model, train_loader, optimizer, criterion, params, clip=1):
     return epoch_loss / len(train_loader), preds, truths
 
 
-def evaluate(model, valid_loader, criterion, params):
+def evaluate(model, valid_loader, criterion, params, device):
 
     model.eval()
     epoch_loss = 0
