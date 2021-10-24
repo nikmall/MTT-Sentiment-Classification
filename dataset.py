@@ -4,10 +4,7 @@ import pickle
 import os
 import torch
 
-if torch.cuda.is_available():
-    torch.set_default_tensor_type('torch.cuda.FloatTensor')
-else:
-    torch.set_default_tensor_type('torch.FloatTensor')
+
 
 
 def pad_audio(audio, max_dim, audio_dim):
