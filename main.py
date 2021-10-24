@@ -10,7 +10,7 @@ from mtt.mtt_cyclic import start_mtt_cyclic
 def main():
     parser = argparse.ArgumentParser(description='CMU-MOSEI Sentiment Classifier')
 
-    parser.add_argument('--model', type=str, default='transformer_cycle',
+    parser.add_argument('--model', type=str, default='mtt_cyclic',
                         help='Options are: mctn, mtt_cyclic, mtt_fuse')
 
 
