@@ -1,35 +1,45 @@
 import time
 from torch import optim
-from mctn_rnn.modules_seq import Seq2Seq, Decoder, Encoder, SentRegressor, Attention
 import torch
 
+from mtt.modules_transformer import Encoder, Decoder, SentRegressor, Seq2SeqTransformer
 from tools import epoch_time, init_weights, count_parameters
 from score_metrics import mosei_scores
 
 
-def start_mctn(train_loader, valid_loader, test_loader, params, device):
-    INPUT_DIM = train_loader.dataset.text.shape[1]
-    OUTPUT_DIM = train_loader.dataset.text.shape[2]
-    ENC_EMB_DIM = params["enc_emb_dim"]
-    DEC_EMB_DIM = params["dec_emb_dim"]
-    ENC_HID_DIM = params["enc_hid_dim"]
-    DEC_HID_DIM = params["dec_hid_dim"]
-    ENC_DROPOUT = params["enc_dropout"]
-    DEC_DROPOUT = params["dec_dropout"]
+def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device):
 
-    SENT_HID_DIM = params["sent_hid_dim"]
-    SENT_DROPOUT = params["sent_dropout"]
+    ENC_EMB_DIM = param_mtt['enc_emb_dim']
+    DEC_EMB_DIM = param_mtt['dec_emb_dim']
+    HID_DIM = param_mtt['hid_dim']  # same as text embedding
+    ENC_LAYERS = param_mtt['enc_layers']
+    DEC_LAYERS = param_mtt['dec_layers']
+    ENC_HEADS = param_mtt['enc_heads']
+    DEC_HEADS = param_mtt['dec_heads']
+    ENC_PF_DIM = param_mtt['enc_pf_dim']
+    DEC_PF_DIM = param_mtt['dec_pf_dim']
+    ENC_DROPOUT = param_mtt['enc_dropout']
+    DEC_DROPOUT = param_mtt['dec_dropout']
 
-    N_LAYERS = params["n_layers"]
-    N_EPOCHS = params["n_epochs"]
+    MAX_LENGTH = param_mtt['max_length']
 
-    attn = Attention(ENC_HID_DIM, DEC_HID_DIM)
-    enc = Encoder(INPUT_DIM, ENC_EMB_DIM, ENC_HID_DIM, DEC_HID_DIM, ENC_DROPOUT)
-    dec = Decoder(OUTPUT_DIM, DEC_EMB_DIM, ENC_HID_DIM, DEC_HID_DIM, DEC_DROPOUT, attn)
+    enc = Encoder(ENC_EMB_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, max_length=MAX_LENGTH)
 
-    regression = SentRegressor(ENC_HID_DIM, SENT_HID_DIM, OUTPUT_DIM, N_LAYERS, SENT_DROPOUT)
+    dec = Decoder(DEC_EMB_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device)
 
-    model = Seq2Seq(enc, dec, regression, device).to(device)
+    SENT_HID_DIM = param_mtt['max_length']
+    SENT_DROPOUT = param_mtt['max_length']
+    SENT_N_LAYERS = param_mtt['sent_n_layers']
+    SENT_FINAL_HID = param_mtt['sent_final_hid']
+
+    N_EPOCHS = param_mtt['n_epochs']
+
+    regression = SentRegressor(ENC_EMB_DIM, SENT_HID_DIM, SENT_FINAL_HID, SENT_N_LAYERS, SENT_DROPOUT)
+
+    SRC_PAD_DIM = MAX_LENGTH
+    TRG_PAD_DIM = MAX_LENGTH
+
+    model = Seq2SeqTransformer(enc, dec, SRC_PAD_DIM, TRG_PAD_DIM, regression, device).to(device)
 
     model.apply(init_weights)
 
@@ -39,10 +49,9 @@ def start_mctn(train_loader, valid_loader, test_loader, params, device):
     optimizer = optim.Adam(model.parameters(), init_lr)
     criterion = torch.nn.MSELoss()
 
-    train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, params)
+    train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS)
 
 def train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, params):
-
     best_valid_loss = float('inf')
 
     for epoch in range(0, N_EPOCHS):
@@ -60,23 +69,25 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
 
         if valid_loss < best_valid_loss:
             best_valid_loss = valid_loss
-            torch.save(model.state_dict(), 'mctn_rnn.pt')
+            torch.save(model.state_dict(), 'mtt_cyclic.pt')
 
         print(f'Epoch: {epoch + 1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s')
         print(f'\tTrain Loss: {train_loss:.4f}%')
         print(f'\t Val. Loss: {valid_loss:.4f}%')
 
     # finally for test
-    model.load_state_dict(torch.load('mctn_rnn.pt'))
+    model.load_state_dict(torch.load('mtt_cyclic.pt'))
 
-    test_loss, pred_test, labels_test = evaluate(model, test_loader, criterion)
-
+    test_loss, pred_test, labels_test = evaluate(model, test_loader, criterion, params)
     mosei_scores(pred_test, labels_test, message='Final Test Scores')
+
 
     print(f'Test Loss: {test_loss:.4f} ')
 
 
+
 def train(model, train_loader, optimizer, criterion, params, clip=1):
+
     model.train()
     epoch_loss = 0
     preds = []
@@ -85,13 +96,10 @@ def train(model, train_loader, optimizer, criterion, params, clip=1):
     for i_batch, (batch_X, batch_Y, batch_META) in enumerate(train_loader):
         sample_ind, text, audio, vision = batch_X
 
-        src = text.permute(1, 0, 2)
-        trg = audio.permute(1, 0, 2)
-        label = batch_Y.permute(1, 0, 2)
-        label = label.squeeze(0)
-        # trg = [trg len, batch size, emb dim]
-        # output = [trg len, batch size, emb dim]
-        # label = [1, batch size, 1]
+        src = text
+        trg = audio
+        label = batch_Y
+        label = label.squeeze()
 
         optimizer.zero_grad()
 
@@ -115,10 +123,12 @@ def train(model, train_loader, optimizer, criterion, params, clip=1):
 
     preds = torch.cat(preds)
     truths = torch.cat(truths)
+
     return epoch_loss / len(train_loader), preds, truths
 
 
 def evaluate(model, valid_loader, criterion, params):
+
     model.eval()
     epoch_loss = 0
     preds = []
@@ -128,20 +138,16 @@ def evaluate(model, valid_loader, criterion, params):
         for i_batch, (batch_X, batch_Y, batch_META) in enumerate(valid_loader):
             sample_ind, text, audio, vision = batch_X
 
-            src = text.permute(1, 0, 2)
-            trg = audio.permute(1, 0, 2)
-            label = batch_Y.permute(1, 0, 2)
-            label = label.squeeze(0)
-            # trg = [trg len, batch size, emb dim]
-            # output = [trg len, batch size, emb dim]
-            # label = [1, batch size, 1]
+            src = text
+            trg = audio
+            label = batch_Y
+            label = label.squeeze()
 
             decoded, cycled_decoded, regression_score = model(src, trg, label)
 
             translate_loss = params['loss_dec_weight'] * criterion(decoded, trg)
             translate_cycle_loss = params['loss_dec_cycle_weight'] * criterion(cycled_decoded, src)
             translate_sent_loss = params['loss_regress_weight'] * criterion(regression_score, label)
-
 
             combined_loss = translate_loss + translate_cycle_loss + translate_sent_loss
             epoch_loss += combined_loss.item()
@@ -151,5 +157,5 @@ def evaluate(model, valid_loader, criterion, params):
 
     preds = torch.cat(preds)
     truths = torch.cat(truths)
-    return epoch_loss / len(valid_loader), preds, truths
 
+    return epoch_loss / len(valid_loader), preds, truths

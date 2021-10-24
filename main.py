@@ -4,6 +4,7 @@ import torch
 from data_process import get_dataloaders
 from parameters import param_mctn, param_mtt
 from mctn_rnn.mctn import start_mctn
+from mtt.mtt_cyclic import start_mtt_cyclic
 
 
 def main():
@@ -38,8 +39,7 @@ def main():
 
 
     if model_type == 'transformer_cycle':
-        print()
-        #start_mtt_cycle(train_loader, valid_loader, test_loader, param_mtt, device)
+        start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device)
     elif model_type == 'transformer_fuse':
         print()
         #start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device)

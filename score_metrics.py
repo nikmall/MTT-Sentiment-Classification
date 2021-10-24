@@ -11,7 +11,7 @@ def multiclass_accuracy(preds, truths):
     :return: Classification accuracy
     """
     acc = np.sum(np.round(preds) == np.round(truths)) / float(len(truths))
-    return acc, 5
+    return acc
 
 def mosei_scores(preds, truths, message=''):
     print(message)
