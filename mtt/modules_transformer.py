@@ -335,7 +335,7 @@ class Seq2SeqTransformer(nn.Module):
     def make_src_mask(self, src):
         # src = [batch size, src len, dim]
 
-        src_pad = torch.zeros(src.shape[0], src.shape[1], self.src_pad_dim)
+        src_pad = torch.zeros(src.shape[0], src.shape[1], self.src_pad_dim).to(device=self.device)
 
         src_mask = torch.all(torch.eq(src, src_pad), axis=2)
 
@@ -347,7 +347,7 @@ class Seq2SeqTransformer(nn.Module):
     def make_trg_mask(self, trg):
         # trg = [batch size, trg len]
 
-        trg_pad = torch.zeros(trg.shape[0], trg.shape[1], self.trg_pad_dim)
+        trg_pad = torch.zeros(trg.shape[0], trg.shape[1], self.trg_pad_dim).to(device=self.device)
 
         trg_pad_mask = torch.all(torch.eq(trg, trg_pad), axis=2).unsqueeze(1).unsqueeze(2)
         # trg_pad_mask = [batch size, 1, 1, trg len]
