@@ -11,7 +11,7 @@ def main():
     parser = argparse.ArgumentParser(description='CMU-MOSEI Sentiment Classifier')
 
     parser.add_argument('--model', type=str, default='transformer_cycle',
-                        help='Options are: mctn, transformer_cycle, transformer_fuse')
+                        help='Options are: mctn, mtt_cyclic, mtt_fuse')
 
 
     parser.add_argument('--dataset', type=str, default='mosei', help='Enter either mosei or mosi')
@@ -38,9 +38,9 @@ def main():
     print("Loaded the Dataloaders")
 
 
-    if model_type == 'transformer_cycle':
+    if model_type == 'mtt_cyclic':
         start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device)
-    elif model_type == 'transformer_fuse':
+    elif model_type == 'mtt_fuse':
         print()
         #start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device)
     elif model_type == 'mctn':

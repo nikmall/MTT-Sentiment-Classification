@@ -1,6 +1,7 @@
 import time
 from torch import optim
 import torch
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from mtt.modules_transformer import Encoder, Decoder, SentRegressor, Seq2SeqTransformer
 from tools import epoch_time, init_weights, count_parameters
@@ -27,10 +28,10 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device)
 
     dec = Decoder(DEC_EMB_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device)
 
-    SENT_HID_DIM = param_mtt['max_length']
-    SENT_DROPOUT = param_mtt['max_length']
-    SENT_N_LAYERS = param_mtt['sent_n_layers']
+    SENT_HID_DIM = param_mtt['sent_hid_dim']
     SENT_FINAL_HID = param_mtt['sent_final_hid']
+    SENT_N_LAYERS = param_mtt['sent_n_layers']
+    SENT_DROPOUT = param_mtt['sent_dropout']
 
     N_EPOCHS = param_mtt['n_epochs']
 
@@ -45,13 +46,16 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device)
 
     print(f'The model has {count_parameters(model):,} trainable parameters')
 
-    init_lr = 0.0001
+    init_lr = 0.001
     optimizer = optim.Adam(model.parameters(), init_lr)
     criterion = torch.nn.MSELoss()
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=param_mtt['lr_patience'], factor=0.1, verbose=True)
 
-    train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS)
 
-def train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, params):
+    train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, param_mtt, scheduler)
+
+
+def train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, params, scheduler):
     best_valid_loss = float('inf')
 
     for epoch in range(0, N_EPOCHS):
@@ -59,11 +63,12 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
 
         train_loss, pred_train, labels_train = train(model, train_loader, optimizer, criterion, params)
         valid_loss, pred_val, labels_val = evaluate(model, valid_loader, criterion, params)
+        scheduler.step(valid_loss)
         end_time = time.time()
 
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
 
-        if epoch % 10 == 0:
+        if epoch % 10 == 0 and epoch > 0:
             mosei_scores(pred_train, labels_train, message="Train Scores at epoch {}".format(epoch))
             mosei_scores(pred_val, labels_val, message="Val Scores at epoch {}".format(epoch))
 

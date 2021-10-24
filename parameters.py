@@ -38,7 +38,9 @@ param_mtt = {
     "sent_final_hid": 128,
     "sent_dropout": 0.4,
     "sent_n_layers": 2,
+
     "n_epochs": 50,
+    'lr_patience': 15,
     'loss_dec_weight': 0.1,
     'loss_dec_cycle_weight': 0.1,
     'loss_regress_weight': 1.0
