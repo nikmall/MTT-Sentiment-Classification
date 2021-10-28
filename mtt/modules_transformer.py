@@ -336,8 +336,6 @@ class Seq2SeqTransformer(nn.Module):
         # src = [batch size, src len, dim]
 
         src_pad = torch.zeros(src.shape[0], src.shape[1], self.src_pad_dim, device=self.device)
-        print("src.is_cuda", src.is_cuda)
-        print("src_pad.is_cuda", src_pad.is_cuda)
 
         src_mask = torch.all(torch.eq(src, src_pad), axis=2)#.to(device=self.device)
 
@@ -350,8 +348,6 @@ class Seq2SeqTransformer(nn.Module):
         # trg = [batch size, trg len]
 
         trg_pad = torch.zeros(trg.shape[0], trg.shape[1], self.trg_pad_dim, device=self.device)
-        print("trg.is_cuda", trg.is_cuda)
-        print("trg_pad.is_cuda", trg_pad.is_cuda)
 
         trg_pad_mask = torch.all(torch.eq(trg, trg_pad), axis=2).unsqueeze(1).unsqueeze(2)#.to(device=self.device)
         # trg_pad_mask = [batch size, 1, 1, trg len]
