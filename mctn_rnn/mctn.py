@@ -7,7 +7,7 @@ from tools import epoch_time, init_weights, count_parameters
 from score_metrics import mosei_scores
 
 
-def start_mctn(train_loader, valid_loader, test_loader, params, device):
+def start_mctn(train_loader, valid_loader, test_loader, params, device, epochs):
     INPUT_DIM = train_loader.dataset.text.shape[1]
     OUTPUT_DIM = train_loader.dataset.text.shape[2]
     ENC_EMB_DIM = params["enc_emb_dim"]
@@ -21,7 +21,7 @@ def start_mctn(train_loader, valid_loader, test_loader, params, device):
     SENT_DROPOUT = params["sent_dropout"]
 
     N_LAYERS = params["n_layers"]
-    N_EPOCHS = params["n_epochs"]
+    N_EPOCHS = epochs if epochs is not None else params["n_epochs"]
 
     attn = Attention(ENC_HID_DIM, DEC_HID_DIM)
     enc = Encoder(INPUT_DIM, ENC_EMB_DIM, ENC_HID_DIM, DEC_HID_DIM, ENC_DROPOUT)

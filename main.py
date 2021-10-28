@@ -15,9 +15,13 @@ def main():
 
 
     parser.add_argument('--dataset', type=str, default='mosei', help='Enter either mosei or mosi')
+
+    parser.add_argument('--epochs', type=int, help='Number of epochs to train. If none, use from param file')
     args = parser.parse_args()
 
     model_type = str.lower(args.model.strip())
+
+    epochs = int(args.epochs)
 
 
     dataset = str.lower(args.dataset.strip())
@@ -40,12 +44,12 @@ def main():
 
 
     if model_type == 'mtt_cyclic':
-        start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device)
+        start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device, epochs)
     elif model_type == 'mtt_fuse':
         print()
-        #start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device)
+        #start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, epochs)
     elif model_type == 'mctn':
-        start_mctn(train_loader, valid_loader, test_loader, param_mctn, device)
+        start_mctn(train_loader, valid_loader, test_loader, param_mctn, device, epochs)
 
 
 if __name__ == '__main__':

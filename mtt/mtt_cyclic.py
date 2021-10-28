@@ -8,7 +8,7 @@ from tools import epoch_time, init_weights, count_parameters
 from score_metrics import mosei_scores
 
 
-def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device):
+def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device, epochs):
 
     ENC_EMB_DIM = param_mtt['enc_emb_dim']
     DEC_EMB_DIM = param_mtt['dec_emb_dim']
@@ -33,7 +33,7 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device)
     SENT_N_LAYERS = param_mtt['sent_n_layers']
     SENT_DROPOUT = param_mtt['sent_dropout']
 
-    N_EPOCHS = param_mtt['n_epochs']
+    N_EPOCHS = epochs if epochs is not None else param_mtt['n_epochs']
 
     regression = SentRegressor(ENC_EMB_DIM, SENT_HID_DIM, SENT_FINAL_HID, SENT_N_LAYERS, SENT_DROPOUT)
 
