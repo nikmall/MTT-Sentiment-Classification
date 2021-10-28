@@ -39,17 +39,17 @@ def start_mctn(train_loader, valid_loader, test_loader, params, device):
     optimizer = optim.Adam(model.parameters(), init_lr)
     criterion = torch.nn.MSELoss()
 
-    train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, params)
+    train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, params, device)
 
-def train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, params):
+def train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, params, device):
 
     best_valid_loss = float('inf')
 
     for epoch in range(0, N_EPOCHS):
         start_time = time.time()
 
-        train_loss, pred_train, labels_train = train(model, train_loader, optimizer, criterion, params)
-        valid_loss, pred_val, labels_val = evaluate(model, valid_loader, criterion, params)
+        train_loss, pred_train, labels_train = train(model, train_loader, optimizer, criterion, params, device)
+        valid_loss, pred_val, labels_val = evaluate(model, valid_loader, criterion, params, device)
         end_time = time.time()
 
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
@@ -69,14 +69,14 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
     # finally for test
     model.load_state_dict(torch.load('mctn_rnn.pt'))
 
-    test_loss, pred_test, labels_test = evaluate(model, test_loader, criterion)
+    test_loss, pred_test, labels_test = evaluate(model, test_loader, criterion, device)
 
     mosei_scores(pred_test, labels_test, message='Final Test Scores')
 
     print(f'Test Loss: {test_loss:.4f} ')
 
 
-def train(model, train_loader, optimizer, criterion, params, clip=1):
+def train(model, train_loader, optimizer, criterion, params, device, clip=1):
     model.train()
     epoch_loss = 0
     preds = []
@@ -85,10 +85,14 @@ def train(model, train_loader, optimizer, criterion, params, clip=1):
     for i_batch, (batch_X, batch_Y, batch_META) in enumerate(train_loader):
         sample_ind, text, audio, vision = batch_X
 
+        text = text.to(device=device)
+        audio = audio.to(device=device)
+        vision = vision.to(device=device)
+
         src = text.permute(1, 0, 2)
         trg = audio.permute(1, 0, 2)
         label = batch_Y.permute(1, 0, 2)
-        label = label.squeeze(0)
+        label = label.squeeze(0).to(device=device)
         # trg = [trg len, batch size, emb dim]
         # output = [trg len, batch size, emb dim]
         # label = [1, batch size, 1]
@@ -118,7 +122,7 @@ def train(model, train_loader, optimizer, criterion, params, clip=1):
     return epoch_loss / len(train_loader), preds, truths
 
 
-def evaluate(model, valid_loader, criterion, params):
+def evaluate(model, valid_loader, criterion, params, device):
     model.eval()
     epoch_loss = 0
     preds = []
@@ -128,10 +132,14 @@ def evaluate(model, valid_loader, criterion, params):
         for i_batch, (batch_X, batch_Y, batch_META) in enumerate(valid_loader):
             sample_ind, text, audio, vision = batch_X
 
+            text = text.to(device=device)
+            audio = audio.to(device=device)
+            vision = vision.to(device=device)
+
             src = text.permute(1, 0, 2)
             trg = audio.permute(1, 0, 2)
             label = batch_Y.permute(1, 0, 2)
-            label = label.squeeze(0)
+            label = label.squeeze(0).to(device=device)
             # trg = [trg len, batch size, emb dim]
             # output = [trg len, batch size, emb dim]
             # label = [1, batch size, 1]

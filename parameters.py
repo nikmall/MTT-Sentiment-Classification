@@ -39,7 +39,7 @@ param_mtt = {
     "sent_dropout": 0.4,
     "sent_n_layers": 2,
 
-    "n_epochs": 50,
+    "n_epochs": 150,
     'lr_patience': 15,
     'loss_dec_weight': 0.1,
     'loss_dec_cycle_weight': 0.1,
