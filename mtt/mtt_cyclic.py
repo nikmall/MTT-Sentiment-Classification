@@ -81,7 +81,7 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
         print(f'\t Val. Loss: {valid_loss:.4f}%')
 
     # finally for test
-    model.load_state_dict(torch.load('mtt_cyclic.pt'))
+    model.load_state_dict(torch.load('mtt_cyclic.pt'), map_location=device)
 
     test_loss, pred_test, labels_test = evaluate(model, test_loader, criterion, params, device)
     mosei_scores(pred_test, labels_test, message='Final Test Scores')
