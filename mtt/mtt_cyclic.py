@@ -108,7 +108,7 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=1):
         src = text
         trg = audio
         label = batch_Y
-        label = label.squeeze()
+        label = label.squeeze().to(device=device)
 
         optimizer.zero_grad()
 
@@ -147,10 +147,14 @@ def evaluate(model, valid_loader, criterion, params, device):
         for i_batch, (batch_X, batch_Y, batch_META) in enumerate(valid_loader):
             sample_ind, text, audio, vision = batch_X
 
+            text = text.to(device=device)
+            audio = audio.to(device=device)
+            vision = vision.to(device=device)
+
             src = text
             trg = audio
             label = batch_Y
-            label = label.squeeze()
+            label = label.squeeze().to(device=device)
 
             decoded, cycled_decoded, regression_score = model(src, trg, label)
 
