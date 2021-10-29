@@ -28,7 +28,7 @@ def main():
     if dataset == 'mosei':
         dataset = 'mosei_senti'
 
-    seed = 7
+    seed = 0
     device = torch.device("cpu")
     torch.set_default_tensor_type('torch.FloatTensor')
     if torch.cuda.is_available():

@@ -22,7 +22,7 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
     ENC_DROPOUT = param_mtt['enc_dropout']
     DEC_DROPOUT = param_mtt['dec_dropout']
 
-    MAX_LENGTH = param_mtt['max_length']
+    MAX_LENGTH = train_loader.dataset.text.shape[1]
 
     enc = Encoder(ENC_EMB_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, max_length=MAX_LENGTH)
 
@@ -41,15 +41,17 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
     TRG_PAD_DIM = MAX_LENGTH
 
     model = Seq2SeqTransformer(enc, dec, SRC_PAD_DIM, TRG_PAD_DIM, regression, device).to(device)
-
+    print(model)
     model.apply(init_weights)
 
     print(f'The model has {count_parameters(model):,} trainable parameters')
 
-    init_lr = 0.0001
+    init_lr = 0.001
+    min_lr = 0.0001
     optimizer = optim.Adam(model.parameters(), init_lr)
     criterion = torch.nn.MSELoss()
-    scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=param_mtt['lr_patience'], factor=0.1, verbose=True)
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=param_mtt['lr_patience'], min_lr=min_lr,
+                                  factor=0.1, verbose=True)
 
 
     train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, param_mtt, scheduler, device)
@@ -63,7 +65,7 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
 
         train_loss, pred_train, labels_train = train(model, train_loader, optimizer, criterion, params, device)
         valid_loss, pred_val, labels_val = evaluate(model, valid_loader, criterion, params, device)
-        # scheduler.step(valid_loss)
+        scheduler.step(valid_loss)
         end_time = time.time()
 
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
@@ -104,7 +106,7 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=1):
 
         text = text.to(device=device)
         audio = audio.to(device=device)
-        vision = vision.to(device=device)
+        # vision = vision.to(device=device)
 
         src = text
         trg = audio
@@ -150,7 +152,7 @@ def evaluate(model, valid_loader, criterion, params, device):
 
             text = text.to(device=device)
             audio = audio.to(device=device)
-            vision = vision.to(device=device)
+            # vision = vision.to(device=device)
 
             src = text
             trg = audio

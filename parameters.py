@@ -30,9 +30,8 @@ param_mtt = {
     "dec_heads": 5,
     "enc_pf_dim": 512,
     "dec_pf_dim": 512,
-    "enc_dropout": 0.4,
-    "dec_dropout": 0.4,
-    "max_length": 300,
+    "enc_dropout": 0.3,
+    "dec_dropout": 0.3,
 
     "sent_hid_dim": 192,
     "sent_final_hid": 128,
@@ -40,7 +39,7 @@ param_mtt = {
     "sent_n_layers": 2,
 
     "n_epochs": 150,
-    'lr_patience': 15,
+    'lr_patience': 20,
     'loss_dec_weight': 0.1,
     'loss_dec_cycle_weight': 0.1,
     'loss_regress_weight': 1.0
