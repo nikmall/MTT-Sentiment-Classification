@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import torch
 
 class Encoder(nn.Module):
-    def __init__(self, input_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length=100):
+    def __init__(self, input_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length):
         super().__init__()
 
         self.device = device
@@ -200,7 +200,7 @@ class Attention(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, output_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length=100):
+    def __init__(self, output_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length):
         super().__init__()
 
         self.device = device
