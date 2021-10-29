@@ -67,7 +67,8 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
         print(f'\t Val. Loss: {valid_loss:.4f}%')
 
     # finally for test
-    model.load_state_dict(torch.load('mctn_rnn.pt'))
+    model.load_state_dict(torch.load('mctn_rnn.pt', map_location=device))
+
 
     test_loss, pred_test, labels_test = evaluate(model, test_loader, criterion, device)
 

@@ -37,8 +37,8 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
 
     regression = SentRegressor(ENC_EMB_DIM, SENT_HID_DIM, SENT_FINAL_HID, SENT_N_LAYERS, SENT_DROPOUT)
 
-    SRC_PAD_DIM = MAX_LENGTH
-    TRG_PAD_DIM = MAX_LENGTH
+    SRC_PAD_DIM = ENC_EMB_DIM
+    TRG_PAD_DIM = DEC_EMB_DIM
 
     model = Seq2SeqTransformer(enc, dec, SRC_PAD_DIM, TRG_PAD_DIM, regression, device).to(device)
     print(model)
@@ -84,7 +84,7 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
 
     # finally for test
     print("DEVICE: ", device)
-    model.load_state_dict(torch.load('mtt_cyclic.pt'), map_location=device)
+    model.load_state_dict(torch.load('mtt_cyclic.pt', map_location=device))
 
     test_loss, pred_test, labels_test = evaluate(model, test_loader, criterion, params, device)
     mosei_scores(pred_test, labels_test, message='Final Test Scores')
