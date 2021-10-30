@@ -22,11 +22,12 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
     ENC_DROPOUT = param_mtt['enc_dropout']
     DEC_DROPOUT = param_mtt['dec_dropout']
 
-    MAX_LENGTH = train_loader.dataset.text.shape[1]
+    MAX_LENGTH_ENC = train_loader.dataset.text.shape[1]
+    MAX_LENGTH_DEC = 100
 
-    enc = Encoder(ENC_EMB_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, MAX_LENGTH)
+    enc = Encoder(ENC_EMB_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, MAX_LENGTH_ENC)
 
-    dec = Decoder(DEC_EMB_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, MAX_LENGTH)
+    dec = Decoder(DEC_EMB_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, MAX_LENGTH_DEC)
 
     SENT_HID_DIM = param_mtt['sent_hid_dim']
     SENT_FINAL_HID = param_mtt['sent_final_hid']
