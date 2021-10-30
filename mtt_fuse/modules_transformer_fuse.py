@@ -320,11 +320,14 @@ class SentRegressor(nn.Module):
 
 
 class Seq2SeqTransformer(nn.Module):
-    def __init__(self, encoder, decoder, src_pad_dim, trg_pad_dim, regression, device):
+    def __init__(self, encoder_text, decoder_audio, encoder_audio, decoder_text, src_pad_dim, trg_pad_dim, regression, device):
         super().__init__()
 
-        self.encoder = encoder
-        self.decoder = decoder
+        self.encoder_text = encoder_text
+        self.decoder_audio = decoder_audio
+        self.encoder_audio = encoder_audio
+        self.decoder_text = decoder_text
+
         self.src_pad_dim = src_pad_dim
         self.trg_pad_dim = trg_pad_dim
         self.device = device
@@ -362,30 +365,32 @@ class Seq2SeqTransformer(nn.Module):
         return trg_mask
 
 
-    def forward(self, src, trg, label, teacher_forcing_ratio=0.5):
+    def forward(self, text, audio, label):
         #src = [batch size, src len, dim]
         #trg = [batch size, trg len, dim]
 
-        src_mask = self.make_src_mask(src)
-        trg_mask = self.make_trg_mask(trg)
+        src_mask_text = self.make_src_mask(text)
+        trg_mask_audio = self.make_trg_mask(audio)
+
+        src_mask_audio = self.make_src_mask(audio)
+        trg_mask_text = self.make_trg_mask(text)
+
         #src_mask = [batch size, 1, 1, src len]
         #trg_mask = [batch size, 1, trg len, trg len]
-
-        enc_src = self.encoder(src, src_mask)
+        enc_text = self.encoder_text(text, src_mask_text)
         #enc_src = [batch size, src len, hid dim]
 
-        output, attention = self.decoder(trg, enc_src, trg_mask, src_mask)
+        output_audio, attention_audio = self.decoder_audio(audio, enc_text, trg_mask_audio, src_mask_text)
         #output = [batch size, trg len, output dim]
         #attention = [batch size, n heads, trg len, src len]
 
-        src_mask_2 = self.make_src_mask(output)
 
-        enc_src_2 = self.encoder(output, src_mask_2)
+        enc_audio = self.encoder_audio(audio, src_mask_audio)
 
-        trg_mask_2 = self.make_trg_mask(enc_src_2)
+        output_text, attention_text = self.decoder_audio(text, enc_audio, trg_mask_text, src_mask_audio)
 
-        output_2, attention_2 = self.decoder(src, enc_src_2, trg_mask_2, src_mask)
+        combined_emb = torch.cat((enc_text, enc_audio), 2)
+        regression_score = self.regression(combined_emb)
 
-        regression_score = self.regression(enc_src)
 
-        return output, output_2, regression_score
+        return output_audio, output_text, regression_score

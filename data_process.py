@@ -7,7 +7,6 @@ from parameters import param
 
 def get_data(dataset, split='train'):
     alignment = 'a' if param["aligned"] else 'na'
-
     data_path = os.path.join(param["data_path"], dataset) + f'_{split}_{alignment}.dt'
     if os.path.exists(data_path):
         print(f"  - Found stored {split} data")

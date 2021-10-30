@@ -3,12 +3,12 @@ from torch import optim
 import torch
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-from mtt.modules_transformer import Encoder, Decoder, SentRegressor, Seq2SeqTransformer
+from mtt_fuse.modules_transformer_fuse import Encoder, Decoder, SentRegressor, Seq2SeqTransformer
 from tools import epoch_time, init_weights, count_parameters
 from score_metrics import mosei_scores
 
 
-def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device, epochs):
+def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, epochs):
 
     ENC_EMB_DIM = param_mtt['enc_emb_dim']
     DEC_EMB_DIM = param_mtt['dec_emb_dim']
@@ -24,9 +24,11 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
 
     MAX_LENGTH = train_loader.dataset.text.shape[1]
 
-    enc = Encoder(ENC_EMB_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, MAX_LENGTH)
+    enc_text = Encoder(ENC_EMB_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, MAX_LENGTH)
+    dec_audio = Decoder(DEC_EMB_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, MAX_LENGTH)
 
-    dec = Decoder(DEC_EMB_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, MAX_LENGTH)
+    enc_audio = Encoder(ENC_EMB_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, MAX_LENGTH)
+    dec_text = Decoder(DEC_EMB_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, MAX_LENGTH)
 
     SENT_HID_DIM = param_mtt['sent_hid_dim']
     SENT_FINAL_HID = param_mtt['sent_final_hid']
@@ -40,13 +42,13 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
     SRC_PAD_DIM = ENC_EMB_DIM
     TRG_PAD_DIM = DEC_EMB_DIM
 
-    model = Seq2SeqTransformer(enc, dec, SRC_PAD_DIM, TRG_PAD_DIM, regression, device).to(device)
+    model = Seq2SeqTransformer(enc_text, dec_audio, enc_audio, dec_text, SRC_PAD_DIM, TRG_PAD_DIM, regression, device).to(device)
     print(model)
     model.apply(init_weights)
 
     print(f'The model has {count_parameters(model):,} trainable parameters')
 
-    init_lr = 0.0001
+    init_lr = 0.001
     min_lr = 0.0001
     optimizer = optim.Adam(model.parameters(), init_lr)
     criterion = torch.nn.MSELoss()
@@ -65,7 +67,7 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
 
         train_loss, pred_train, labels_train = train(model, train_loader, optimizer, criterion, params, device)
         valid_loss, pred_val, labels_val = evaluate(model, valid_loader, criterion, params, device)
-        # scheduler.step(valid_loss)
+        scheduler.step(valid_loss)
         end_time = time.time()
 
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
@@ -104,17 +106,17 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=1):
     for i_batch, (batch_X, batch_Y, batch_META) in enumerate(train_loader):
         sample_ind, text, audio, vision = batch_X
 
-        src = text.to(device=device)
-        trg = audio.to(device=device)
+        text = text.to(device=device)
+        audio = audio.to(device=device)
         label = batch_Y
         label = label.squeeze().to(device=device)
 
         optimizer.zero_grad()
 
-        decoded, cycled_decoded, regression_score = model(src, trg, label)
+        output_audio, output_text, regression_score = model(text, audio, label)
 
-        translate_loss = params['loss_dec_weight'] * criterion(decoded, trg)
-        translate_cycle_loss = params['loss_dec_cycle_weight'] * criterion(cycled_decoded, src)
+        translate_loss = params['loss_dec_weight'] * criterion(output_audio, audio)
+        translate_cycle_loss = params['loss_dec_cycle_weight'] * criterion(output_text, text)
         translate_sent_loss = params['loss_regress_weight'] * criterion(regression_score, label)
 
         combined_loss = translate_loss + translate_cycle_loss + translate_sent_loss
@@ -146,15 +148,15 @@ def evaluate(model, valid_loader, criterion, params, device):
         for i_batch, (batch_X, batch_Y, batch_META) in enumerate(valid_loader):
             sample_ind, text, audio, vision = batch_X
 
-            src = text.to(device=device)
-            trg = audio.to(device=device)
+            text = text.to(device=device)
+            audio = audio.to(device=device)
             label = batch_Y
             label = label.squeeze().to(device=device)
 
-            decoded, cycled_decoded, regression_score = model(src, trg, label)
+            output_audio, output_text, regression_score = model(text, audio, label)
 
-            translate_loss = params['loss_dec_weight'] * criterion(decoded, trg)
-            translate_cycle_loss = params['loss_dec_cycle_weight'] * criterion(cycled_decoded, src)
+            translate_loss = params['loss_dec_weight'] * criterion(output_audio, audio)
+            translate_cycle_loss = params['loss_dec_cycle_weight'] * criterion(output_text, text)
             translate_sent_loss = params['loss_regress_weight'] * criterion(regression_score, label)
 
             combined_loss = translate_loss + translate_cycle_loss + translate_sent_loss
