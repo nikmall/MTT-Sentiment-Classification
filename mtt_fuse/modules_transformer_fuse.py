@@ -297,7 +297,7 @@ class SentRegressor(nn.Module):
         self.output_dim = output_dim
         self.n_layers = n_layers
 
-        self.lstm = nn.LSTM(self.input_dim, self.hidden_dim, bidirectional=bidirect, dropout=dropout,
+        self.lstm = nn.LSTM(self.input_dim * 2, self.hidden_dim, bidirectional=bidirect, dropout=dropout,
                             num_layers=self.n_layers, batch_first=True)
         if bidirect:
             self.fc = nn.Linear(self.hidden_dim * self.n_layers * 2, self.output_dim)
