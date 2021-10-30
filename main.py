@@ -5,6 +5,7 @@ from data_process import get_dataloaders
 from parameters import param_mctn, param_mtt
 from mctn_rnn.mctn import start_mctn
 from mtt.mtt_cyclic import start_mtt_cyclic
+from mtt_fuse.mtt_fuse import start_mtt_fuse
 
 
 def main():
@@ -47,7 +48,7 @@ def main():
         start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device, epochs)
     elif model_type == 'mtt_fuse':
         print()
-        #start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, epochs)
+        start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, epochs)
     elif model_type == 'mctn':
         start_mctn(train_loader, valid_loader, test_loader, param_mctn, device, epochs)
 
