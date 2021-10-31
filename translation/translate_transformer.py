@@ -445,9 +445,9 @@ def train(model, train_loader, optimizer, criterion, clip=1):
     for i_batch, (batch_X, batch_Y, batch_META) in enumerate(train_loader):
         sample_ind, text, audio, vision = batch_X
 
-        src = text
-        trg = audio
-        label = batch_Y
+        src = text.to(device=device)
+        trg = audio.to(device=device)
+        label = batch_Y.to(device=device)
         label = label.squeeze()
 
         optimizer.zero_grad()
@@ -487,9 +487,9 @@ def evaluate(model, valid_loader, criterion):
         for i_batch, (batch_X, batch_Y, batch_META) in enumerate(valid_loader):
             sample_ind, text, audio, vision = batch_X
 
-            src = text
-            trg = audio
-            label = batch_Y
+            src = text.to(device=device)
+            trg = audio.to(device=device)
+            label = batch_Y.to(device=device)
             label = label.squeeze()
 
             decoded, cycled_decoded, regression_score = model(src, trg, label)
