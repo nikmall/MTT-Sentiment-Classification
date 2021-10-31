@@ -32,9 +32,9 @@ def get_dataloaders():
     test_data = get_data( param["dataset"], 'test')
 
 
-    train_loader = DataLoader(train_data, batch_size=param["batch_size"], shuffle=True)
-    valid_loader = DataLoader(valid_data, batch_size=param["batch_size"], shuffle=True)
-    test_loader = DataLoader(test_data, batch_size=param["batch_size"], shuffle=True)
+    train_loader = DataLoader(train_data, batch_size=param["batch_size"], shuffle=False)
+    valid_loader = DataLoader(valid_data, batch_size=param["batch_size"], shuffle=False)
+    test_loader = DataLoader(test_data, batch_size=param["batch_size"], shuffle=False)
 
     return train_loader, valid_loader, test_loader
 
