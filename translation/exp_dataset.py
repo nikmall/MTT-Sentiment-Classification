@@ -2,17 +2,20 @@ import torch
 import os
 from dataset import Multimodal_Datasets
 from torch.utils.data import DataLoader
+from os.path import dirname, abspath
+
+d = dirname(dirname(abspath(__file__)))
 
 param = {
     "dataset" : 'mosei_senti', # 'mosei',
     "aligned" : 'True',
-    "data_path" : '...\\data',
+    "data_path" : 'data',
     "batch_size" : 32 }
 
 
 def get_data(dataset, split='train'):
     alignment = 'a' if param["aligned"] else 'na'
-    data_path = os.path.join(param["data_path"], dataset) + f'_{split}_{alignment}.dt'
+    data_path = os.path.join(d, param["data_path"], dataset) + f'_{split}_{alignment}.dt'
     if not os.path.exists(data_path):
         print(f"  - Creating new {split} data")
         data = Multimodal_Datasets(param["data_path"], dataset, split, param["aligned"])
