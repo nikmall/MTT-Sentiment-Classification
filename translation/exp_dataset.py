@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 param = {
     "dataset" : 'mosei_senti', # 'mosei',
     "aligned" : 'True',
-    "data_path" : '...\data',
+    "data_path" : '..\\data',
     "batch_size" : 32 }
 
 
