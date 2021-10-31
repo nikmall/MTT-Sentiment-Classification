@@ -23,7 +23,7 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
     DEC_DROPOUT = param_mtt['dec_dropout']
 
     MAX_LENGTH_ENC = train_loader.dataset.text.shape[1]
-    MAX_LENGTH_DEC = 100
+    MAX_LENGTH_DEC = 50
 
     enc = Encoder(ENC_EMB_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, MAX_LENGTH_ENC)
 
@@ -47,7 +47,7 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
 
     print(f'The model has {count_parameters(model):,} trainable parameters')
 
-    init_lr = 0.0001
+    init_lr = 0.0005
     min_lr = 0.0001
     optimizer = optim.Adam(model.parameters(), init_lr)
     criterion = torch.nn.MSELoss()
@@ -95,7 +95,7 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
 
 
 
-def train(model, train_loader, optimizer, criterion, params, device, clip=1):
+def train(model, train_loader, optimizer, criterion, params, device, clip=10):
 
     model.train()
     epoch_loss = 0
