@@ -8,12 +8,12 @@ import string
 import torch.nn as nn
 from torch import optim
 import torch.nn.functional as F
-from translation.exp_dataset import get_dataloaders
+from exp_dataset import get_dataloaders
 import torch
 import numpy as np
 import time
 import math
-import translation.config as configs
+import config as configs
 from sklearn.metrics import accuracy_score, f1_score, confusion_matrix, classification_report
 
 
