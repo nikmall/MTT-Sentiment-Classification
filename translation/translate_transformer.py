@@ -367,7 +367,7 @@ class Seq2Seq(nn.Module):
 
         src_pad = torch.zeros(src.shape[0], src.shape[1], self.src_pad_dim, device=self.device)
 
-        src_mask = torch.all(torch.eq(src, src_pad), axis=2).to(self.device)
+        src_mask = torch.all(torch.eq(src, src_pad), axis=2)
 
         src_mask = src_mask.unsqueeze(1).unsqueeze(2)
         # src_mask = [batch size, 1, 1, src len]
