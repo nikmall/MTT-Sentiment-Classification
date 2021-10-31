@@ -78,7 +78,7 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
 
         if valid_loss < best_valid_loss:
             best_valid_loss = valid_loss
-            torch.save(model.state_dict(), 'mtt_cyclic.pt')
+            torch.save(model.state_dict(), 'mtt_fuse.pt')
 
         print(f'Epoch: {epoch + 1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s')
         print(f'\tTrain Loss: {train_loss:.4f}%')
@@ -86,7 +86,7 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
 
     # finally for test
     print("DEVICE: ", device)
-    model.load_state_dict(torch.load('mtt_cyclic.pt', map_location=device))
+    model.load_state_dict(torch.load('mtt_fuse.pt', map_location=device))
 
     test_loss, pred_test, labels_test = evaluate(model, test_loader, criterion, params, device)
     mosei_scores(pred_test, labels_test, message='Final Test Scores')
