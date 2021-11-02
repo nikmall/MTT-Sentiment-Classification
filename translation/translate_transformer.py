@@ -539,7 +539,7 @@ def start():
 
     enc = Encoder(ENC_EMB_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, max_length=MAX_LENGTH)
 
-    dec = Decoder(DEC_EMB_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device)
+    dec = Decoder(DEC_EMB_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, max_length=80)
 
     SENT_HID_DIM = 192
     SENT_DROPOUT = 0.4
@@ -595,7 +595,7 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
 
     test_loss, pred_test, labels_test = evaluate(model, test_loader, criterion)
     get_preds_statistics(pred_test, labels_test, message="Test Final Scores: ")
-    # mosei_scores(pred_test, labels_test, message="Test Scores Final 2 ")
+    mosei_scores(pred_test, labels_test, message="Test Scores Final 2 -mosei_scores ")
 
     print(f'Test Loss: {test_loss:.4f} ')
 
