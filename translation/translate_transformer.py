@@ -32,7 +32,7 @@ def timeSince(since, percent):
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+torch.backends.cudnn.enabled = False
 
 class Encoder(nn.Module):
     def __init__(self, input_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length=100):
