@@ -259,7 +259,7 @@ class Decoder(nn.Module):
 
         # pos = [batch size, trg len]
 
-        trg = self.dropout(trg + self.pos_embedding(pos))
+        trg = self.dropout((trg * self.scale) + self.pos_embedding(pos))
         # trg = [batch size, trg len, hid dim]
 
         for layer in self.layers:
@@ -539,7 +539,7 @@ def start():
 
     enc = Encoder(ENC_EMB_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, max_length=MAX_LENGTH)
 
-    dec = Decoder(DEC_EMB_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, max_length=80)
+    dec = Decoder(DEC_EMB_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, max_length=MAX_LENGTH)
 
     SENT_HID_DIM = 192
     SENT_DROPOUT = 0.4
