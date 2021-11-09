@@ -228,7 +228,7 @@ class Decoder(nn.Module):
 
         # pos = [batch size, trg len]
 
-        trg = self.dropout(trg + self.pos_embedding(pos))
+        trg = self.dropout((trg * self.scale) + self.pos_embedding(pos))
         # trg = [batch size, trg len, hid dim]
 
         for layer in self.layers:

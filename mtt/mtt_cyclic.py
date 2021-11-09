@@ -43,11 +43,12 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
 
     model = Seq2SeqTransformer(enc, dec, SRC_PAD_DIM, TRG_PAD_DIM, regression, device).to(device)
     print(model)
+
     model.apply(init_weights)
 
     print(f'The model has {count_parameters(model):,} trainable parameters')
 
-    init_lr = 0.0005
+    init_lr = 0.0001
     min_lr = 0.0001
     optimizer = optim.Adam(model.parameters(), init_lr)
     criterion = torch.nn.MSELoss()
@@ -58,7 +59,7 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
     train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, param_mtt, scheduler, device)
 
 
-def train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, params, scheduler, device):
+def  train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, params, scheduler, device):
     best_valid_loss = float('inf')
 
     for epoch in range(0, N_EPOCHS):

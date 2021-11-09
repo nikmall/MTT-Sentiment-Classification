@@ -7,6 +7,16 @@ from mctn_rnn.mctn import start_mctn
 from mtt.mtt_cyclic import start_mtt_cyclic
 from mtt_fuse.mtt_fuse import start_mtt_fuse
 
+seed = 0
+device = torch.device("cpu")
+# torch.set_default_tensor_type('torch.FloatTensor')
+if torch.cuda.is_available():
+    print("using cuda")
+    # torch.cuda.manual_seed(seed)
+    # torch.set_default_tensor_type('torch.cuda.FloatTensor')
+    device = torch.device("cuda")
+
+torch.backends.cudnn.enabled = False
 
 def main():
     parser = argparse.ArgumentParser(description='CMU-MOSEI Sentiment Classifier')
@@ -18,25 +28,19 @@ def main():
     parser.add_argument('--dataset', type=str, default='mosei', help='Enter either mosei or mosi')
 
     parser.add_argument('--epochs', type=int, help='Number of epochs to train. If none, use from param file')
+    parser.add_argument('--cont_loaded', type=bool, default=False, help='To load existing saved model and continue')
     args = parser.parse_args()
 
     model_type = str.lower(args.model.strip())
 
     epochs = int(args.epochs)
-
+    cont_loaded = args.cont_loaded
 
     dataset = str.lower(args.dataset.strip())
     if dataset == 'mosei':
         dataset = 'mosei_senti'
 
-    seed = 0
-    device = torch.device("cpu")
-    torch.set_default_tensor_type('torch.FloatTensor')
-    if torch.cuda.is_available():
-        print("using cuda")
-        torch.cuda.manual_seed(seed)
-        torch.set_default_tensor_type('torch.cuda.FloatTensor')
-        device = torch.device("cuda")
+
 
     print(f'Processing dataset {dataset} for training on {model_type} model type')
 
