@@ -1,7 +1,27 @@
-import random
+from torch import Tensor
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
+import math
+
+class PositionalEncoding(nn.Module):
+    def __init__(self, d_model: int, max_len: int ):
+        super().__init__()
+
+        position = torch.arange(max_len).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
+        pe = torch.zeros(1, max_len, d_model)
+        pe[0, :, 0::2] = torch.sin(position * div_term)
+        pe[0, :, 1::2] = torch.cos(position * div_term)
+        self.register_buffer('pe', pe)
+
+    def forward(self, x: Tensor) -> Tensor:
+        """
+        Args:
+            x: Tensor, shape [seq_len, batch_size, embedding_dim]
+        """
+        x = x + self.pe[:x.size(0)]
+        return x
 
 class Encoder(nn.Module):
     def __init__(self, input_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length):
@@ -9,8 +29,7 @@ class Encoder(nn.Module):
 
         self.device = device
 
-        # self.tok_embedding = nn.Embedding(input_dim, hid_dim)
-        self.pos_embedding = nn.Embedding(max_length, input_dim)  # (max_length, hid_dim)
+        self.pos_encoder = PositionalEncoding(hid_dim, max_length)
 
         self.layers = nn.ModuleList([EncoderLayer(hid_dim, n_heads, pf_dim, dropout, device) for _ in range(n_layers)])
 
@@ -25,13 +44,13 @@ class Encoder(nn.Module):
         batch_size = src.shape[0]
         src_len = src.shape[1]
 
-        pos = torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
-
+        #pos = torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
         # pos = [batch size, src len]
 
         # src = self.dropout((self.tok_embedding(src) * self.scale) + self.pos_embedding(pos))
-        src = self.dropout((src * self.scale) + self.pos_embedding(pos))
-
+        src = src * self.scale
+        src = self.pos_encoder(src)
+        src = self.dropout(src)
         # src = [batch size, src len, hid dim]
 
         for layer in self.layers:
@@ -203,8 +222,8 @@ class Decoder(nn.Module):
         super().__init__()
 
         self.device = device
-        self.tok_embedding = nn.Embedding(output_dim, hid_dim)
-        self.pos_embedding = nn.Embedding(max_length, hid_dim)
+
+        self.pos_encoder = PositionalEncoding(hid_dim, max_length)
 
         self.layers = nn.ModuleList([DecoderLayer(hid_dim, n_heads, pf_dim, dropout, device)
                                      for _ in range(n_layers)])
@@ -224,11 +243,12 @@ class Decoder(nn.Module):
         batch_size = trg.shape[0]
         trg_len = trg.shape[1]
 
-        pos = torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
-
+        #pos = torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
         # pos = [batch size, trg len]
+        trg = trg * self.scale
+        trg = self.pos_encoder(trg)
+        trg = self.dropout(trg)
 
-        trg = self.dropout((trg * self.scale) + self.pos_embedding(pos))
         # trg = [batch size, trg len, hid dim]
 
         for layer in self.layers:

@@ -28,8 +28,8 @@ param_mtt = {
     "dec_layers": 3,
     "enc_heads": 5,
     "dec_heads": 5,
-    "enc_pf_dim": 480,
-    "dec_pf_dim": 440,
+    "enc_pf_dim": 512,
+    "dec_pf_dim": 512,
     "enc_dropout": 0.31,
     "dec_dropout": 0.31,
 
