@@ -40,7 +40,7 @@ param_mtt = {
 
     "n_epochs": 150,
     'lr_patience': 20,
-    'loss_dec_weight': 0.1,
-    'loss_dec_cycle_weight': 0.1,
-    'loss_regress_weight': 1.0
+    'loss_dec_weight': 0.2,
+    'loss_dec_cycle_weight': 0.2,
+    'loss_regress_weight': 0.9
 }
