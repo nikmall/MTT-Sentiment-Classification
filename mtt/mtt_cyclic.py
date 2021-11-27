@@ -62,7 +62,7 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
 def  train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, params, scheduler, device):
     best_valid_loss = float('inf')
 
-    for epoch in range(0, N_EPOCHS):
+    for epoch in range(1, N_EPOCHS+1):
         start_time = time.time()
 
         train_loss, pred_train, labels_train = train(model, train_loader, optimizer, criterion, params, device)
@@ -91,7 +91,7 @@ def  train_model(model, train_loader, valid_loader, test_loader, optimizer, crit
     test_loss, pred_test, labels_test = evaluate(model, test_loader, criterion, params, device)
     mosei_scores(pred_test, labels_test, message='Final Test Scores')
 
-
+    print(f'Minimum validation loss overall is {train_loss}')
     print(f'Test Loss: {test_loss:.4f} ')
 
 

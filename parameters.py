@@ -26,9 +26,9 @@ param_mtt = {
     "hid_dim": 300,# embedding dimension if glove300 is always 300
     "enc_layers": 4,
     "dec_layers": 4,
-    "enc_heads": 5,
-    "dec_heads": 5,
-    "enc_pf_dim": 380,
+    "enc_heads": 4,
+    "dec_heads": 4,
+    "enc_pf_dim": 360,
     "dec_pf_dim": 360,
     "enc_dropout": 0.31,
     "dec_dropout": 0.31,
