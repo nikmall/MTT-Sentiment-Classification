@@ -42,5 +42,5 @@ param_mtt = {
     'lr_patience': 20,
     'loss_dec_weight': 0.1,
     'loss_dec_cycle_weight': 0.1,
-    'loss_regress_weight': 0.9
+    'loss_regress_weight': 1.0
 }
