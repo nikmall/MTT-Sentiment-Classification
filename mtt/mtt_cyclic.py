@@ -80,7 +80,7 @@ def  train_model(model, train_loader, valid_loader, test_loader, optimizer, crit
             best_valid_loss = valid_loss
             torch.save(model.state_dict(), 'mtt_cyclic.pt')
 
-        print(f'Epoch: {epoch + 1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s')
+        print(f'Epoch: {epoch:02} | Epoch Time: {epoch_mins}m {epoch_secs}s')
         print(f'\tTrain Loss: {train_loss:.4f}%')
         print(f'\t Val. Loss: {valid_loss:.4f}%')
 
