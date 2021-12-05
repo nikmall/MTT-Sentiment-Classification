@@ -164,7 +164,7 @@ class MultiHeadAttentionLayer(nn.Module):
 
 
 class PositionwiseFeedforwardLayer(nn.Module):
-    def __init__(self, hid_dim, pf_dim, dropout):
+    def __init__(self, hid_dim, pf_dim, dropout, out_hid_dim=''):
         super().__init__()
 
         self.fc_1 = nn.Linear(hid_dim, pf_dim)
@@ -309,9 +309,9 @@ class DecoderLayer(nn.Module):
         return trg, attention
 
 
-class SentRegressor(nn.Module):
+class SentRegressorRNN(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim, n_layers, dropout, bidirect=False):
-        super(SentRegressor, self).__init__()
+        super(SentRegressorRNN, self).__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
@@ -338,6 +338,25 @@ class SentRegressor(nn.Module):
 
         return final_out.squeeze()
 
+class SentRegressor(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim, n_layers, dropout, encoder):
+        super(SentRegressor, self).__init__()
+
+        self.input_dim = input_dim
+        self.hidden_dim = hidden_dim
+        self.output_dim = output_dim
+        self.n_layers = n_layers
+
+        self.encoder = encoder
+
+        self.fc = nn.Linear(300, self.output_dim)
+        self.fc2 = nn.Linear(self.output_dim, 1)
+    def forward(self, encoded, src_mask):
+        enc_src = self.encoder(encoded, src_mask)
+        mean_embeds = torch.mean(enc_src, dim=1)
+        fc_out = F.relu(self.fc(mean_embeds))
+        final_out = self.fc2(fc_out)
+        return final_out.squeeze()
 
 class Seq2SeqTransformer(nn.Module):
     def __init__(self, encoder, decoder, src_pad_dim, trg_pad_dim, regression, device):
@@ -406,6 +425,8 @@ class Seq2SeqTransformer(nn.Module):
 
         output_2, attention_2 = self.decoder(src, enc_src_2, trg_mask_2, src_mask)
 
-        regression_score = self.regression(enc_src)
+        # regression_score = self.regression(enc_src)
+        regression_score = self.regression(enc_src, self.make_src_mask(enc_src))
+
 
         return output, output_2, regression_score

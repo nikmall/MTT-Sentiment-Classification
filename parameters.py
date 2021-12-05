@@ -24,11 +24,11 @@ param_mtt = {
     "enc_emb_dim": 300,# the len of the vocabulary, in our mosei standart case is the glove300
     "dec_emb_dim": 300,
     "hid_dim": 300,# embedding dimension if glove300 is always 300
-    "enc_layers": 4,
-    "dec_layers": 4,
+    "enc_layers": 3,
+    "dec_layers": 3,
     "enc_heads": 4,
     "dec_heads": 4,
-    "enc_pf_dim": 460,
+    "enc_pf_dim": 480,
     "dec_pf_dim": 440,
     "enc_dropout": 0.31,
     "dec_dropout": 0.31,
