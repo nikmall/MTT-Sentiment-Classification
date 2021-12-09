@@ -131,7 +131,7 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=10):
 
         decoded, regression_score = model(src, trg, label)
 
-        translate_loss = params['loss_dec_weight'] * 1.5 * criterion(decoded, trg)
+        translate_loss = params['loss_dec_weight'] * criterion(decoded, trg)
         #if params["cyclic"]:
         #    translate_cycle_loss = params['loss_dec_cycle_weight'] * criterion(cycled_decoded, src)
         translate_sent_loss = params['loss_regress_weight'] * criterion(regression_score, label)
