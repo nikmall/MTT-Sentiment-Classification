@@ -293,7 +293,7 @@ class DecoderLayer(nn.Module):
 
 class SentRegressor(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim, n_layers, dropout, bidirect=False):
-        super(SentRegressor, self).__init__()
+        super().__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
