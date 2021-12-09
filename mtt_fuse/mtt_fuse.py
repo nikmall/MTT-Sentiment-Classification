@@ -13,7 +13,7 @@ def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, e
     ENC_EMB_DIM = param_mtt['enc_emb_dim']
     # DEC_EMB_DIM = param_mtt['dec_emb_dim']
     HID_DIM = param_mtt['hid_dim']  # same as text embedding
-    DED_HID_DIM = train_loader.dataset.audio.shape[2] + train_loader.dataset.audio.shape[1] \
+    DED_HID_DIM = train_loader.dataset.audio.shape[2] + train_loader.dataset.vision.shape[2] \
         if param_mtt["fuse_modalities"] else train_loader.dataset.audio.shape[2]
     DEC_EMB_DIM = DED_HID_DIM
     ENC_LAYERS = param_mtt['enc_layers']
@@ -29,7 +29,7 @@ def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, e
 
     enc = Encoder(ENC_EMB_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, MAX_LENGTH)
 
-    dec = Decoder(DEC_EMB_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, MAX_LENGTH)
+    dec = Decoder(DEC_EMB_DIM, DED_HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, MAX_LENGTH)
 
 
     SENT_HID_DIM = param_mtt['sent_hid_dim']
