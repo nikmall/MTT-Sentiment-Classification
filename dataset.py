@@ -6,7 +6,6 @@ import os
 import torch
 
 
-
 def pad_modality(modality_tensor, max_dim, input_dim):
     modality_tensor_trans = F.pad(modality_tensor,
                          ( (0, max_dim - input_dim)), 'constant', 0)

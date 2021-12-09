@@ -7,7 +7,7 @@ from mctn_rnn.mctn import start_mctn
 from mtt.mtt_cyclic import start_mtt_cyclic
 from mtt_fuse.mtt_fuse import start_mtt_fuse
 
-seed = 0
+seed = 11
 device = torch.device("cpu")
 # torch.set_default_tensor_type('torch.FloatTensor')
 if torch.cuda.is_available():
@@ -16,7 +16,7 @@ if torch.cuda.is_available():
     # torch.set_default_tensor_type('torch.cuda.FloatTensor')
     device = torch.device("cuda")
 
-torch.backends.cudnn.enabled = False
+# torch.backends.cudnn.enabled = False
 
 def main():
     parser = argparse.ArgumentParser(description='CMU-MOSEI Sentiment Classifier')
