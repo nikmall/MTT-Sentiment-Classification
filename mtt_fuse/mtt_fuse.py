@@ -152,7 +152,7 @@ def evaluate(model, valid_loader, criterion, params, device):
             label = batch_Y
             label = label.squeeze().to(device=device)
 
-            decoded, cycled_decoded, regression_score = model(src, trg, label)
+            decoded, regression_score = model(src, trg, label)
 
             translate_loss = params['loss_dec_weight'] * 1.5 * criterion(decoded, trg)
             # translate_cycle_loss = params['loss_dec_cycle_weight'] * criterion(cycled_decoded, src)
