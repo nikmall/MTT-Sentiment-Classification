@@ -38,12 +38,12 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
 
     encoder_2 = Encoder(ENC_EMB_DIM, HID_DIM, 2, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, MAX_LENGTH_ENC)
 
-    regression = SentRegressor(ENC_EMB_DIM, SENT_HID_DIM, SENT_FINAL_HID, SENT_N_LAYERS, SENT_DROPOUT, encoder_2)
+    regression = SentRegressor(ENC_EMB_DIM, SENT_HID_DIM, SENT_FINAL_HID, SENT_N_LAYERS, device) #, SENT_DROPOUT) #, encoder_2)
 
     SRC_PAD_DIM = ENC_EMB_DIM
     TRG_PAD_DIM = DEC_EMB_DIM
 
-    model = Seq2SeqTransformer(enc, dec, SRC_PAD_DIM, TRG_PAD_DIM, regression, device).to(device)
+    model = Seq2SeqTransformer(enc, dec, SRC_PAD_DIM, TRG_PAD_DIM, regression, encoder_2, device).to(device)
     print(model)
 
     model.apply(init_weights)

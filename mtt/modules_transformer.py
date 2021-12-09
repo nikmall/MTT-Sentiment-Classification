@@ -339,27 +339,28 @@ class SentRegressorRNN(nn.Module):
         return final_out.squeeze()
 
 class SentRegressor(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim, n_layers, dropout, encoder):
+    def __init__(self, input_dim, hidden_dim, output_dim, n_layers, device):#, dropout, encoder):
         super(SentRegressor, self).__init__()
 
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
         self.n_layers = n_layers
-
-        self.encoder = encoder
+        self.device = device
+        #self.encoder = encoder
 
         self.fc = nn.Linear(300, self.output_dim)
         self.fc2 = nn.Linear(self.output_dim, 1)
-    def forward(self, encoded, src_mask):
-        enc_src = self.encoder(encoded, src_mask)
+    def forward(self, enc_src): #encoded, src_mask):
+        #enc_src = self.encoder(encoded, src_mask)
         mean_embeds = torch.mean(enc_src, dim=1)
+        mean_embeds = mean_embeds.to(self.device)
         fc_out = F.relu(self.fc(mean_embeds))
         final_out = self.fc2(fc_out)
         return final_out.squeeze()
 
 class Seq2SeqTransformer(nn.Module):
-    def __init__(self, encoder, decoder, src_pad_dim, trg_pad_dim, regression, device):
+    def __init__(self, encoder, decoder, src_pad_dim, trg_pad_dim, regression, encoder_2, device):
         super().__init__()
 
         self.encoder = encoder
@@ -367,6 +368,7 @@ class Seq2SeqTransformer(nn.Module):
         self.src_pad_dim = src_pad_dim
         self.trg_pad_dim = trg_pad_dim
         self.device = device
+        self.encoder_2 = encoder_2
         self.regression = regression
 
     # mask for pre-trained embedding inputs (3dim)
@@ -426,7 +428,8 @@ class Seq2SeqTransformer(nn.Module):
         output_2, attention_2 = self.decoder(src, enc_src_2, trg_mask_2, src_mask)
 
         # regression_score = self.regression(enc_src)
-        regression_score = self.regression(enc_src, self.make_src_mask(enc_src))
+        enc_regress = self.encoder_2(enc_src, self.make_src_mask(enc_src))
+        regression_score = self.regression(enc_regress)
 
 
         return output, output_2, regression_score
