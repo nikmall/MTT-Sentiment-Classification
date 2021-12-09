@@ -297,7 +297,7 @@ class SentRegressor(nn.Module):
         self.output_dim = output_dim
         self.n_layers = n_layers
 
-        self.lstm = nn.LSTM(self.input_dim * 2, self.hidden_dim, bidirectional=bidirect, dropout=dropout,
+        self.lstm = nn.LSTM(self.input_dim, self.hidden_dim, bidirectional=bidirect, dropout=dropout,
                             num_layers=self.n_layers, batch_first=True)
         if bidirect:
             self.fc = nn.Linear(self.hidden_dim * self.n_layers * 2, self.output_dim)
@@ -320,6 +320,62 @@ class SentRegressor(nn.Module):
 
 
 class Seq2SeqTransformer(nn.Module):
+    def __init__(self, encoder, decoder, src_pad_dim, trg_pad_dim, regression, device):
+        super().__init__()
+
+        self.encoder = encoder
+        self.decoder = decoder
+        self.src_pad_dim = src_pad_dim
+        self.trg_pad_dim = trg_pad_dim
+        self.device = device
+        self.regression = regression
+
+    # mask for pre-trained embedding inputs (3dim)
+    def make_src_mask(self, src):
+        # src = [batch size, src len, dim]
+
+        src_pad = torch.zeros(src.shape[0], src.shape[1], self.src_pad_dim, device=self.device)
+
+        src_mask = torch.all(torch.eq(src, src_pad), axis=2)#.to(device=self.device)
+
+        src_mask = src_mask.unsqueeze(1).unsqueeze(2)
+        # src_mask = [batch size, 1, 1, src len]
+
+        return src_mask
+
+    def make_trg_mask(self, trg):
+        # trg = [batch size, trg len]
+
+        trg_pad = torch.zeros(trg.shape[0], trg.shape[1], self.trg_pad_dim, device=self.device)
+
+        trg_pad_mask = torch.all(torch.eq(trg, trg_pad), axis=2).unsqueeze(1).unsqueeze(2)#.to(device=self.device)
+        # trg_pad_mask = [batch size, 1, 1, trg len]
+
+        trg_len = trg.shape[1]
+
+        trg_sub_mask = torch.tril(torch.ones((trg_len, trg_len), device=self.device)).bool()
+        # trg_sub_mask = [trg len, trg len]
+
+        trg_mask = trg_pad_mask & trg_sub_mask
+        # trg_mask = [batch size, 1, trg len, trg len]
+
+        return trg_mask
+
+    def forward(self, src, trg, label):
+        src_mask = self.make_src_mask(src)
+        trg_mask = self.make_trg_mask(trg)
+
+        enc_src = self.encoder(src, src_mask)
+        #enc_src = [batch size, src len, hid dim]
+
+        output, attention = self.decoder(trg, enc_src, trg_mask, src_mask)
+
+        regression_score = self.regression(enc_src)
+
+        return output, regression_score
+
+
+class Seq2SeqTransformerConcat(nn.Module):
     def __init__(self, encoder_text, decoder_audio, encoder_audio, decoder_text, src_pad_dim, trg_pad_dim, regression, device):
         super().__init__()
 

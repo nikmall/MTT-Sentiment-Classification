@@ -24,11 +24,10 @@ def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, e
 
     MAX_LENGTH = train_loader.dataset.text.shape[1]
 
-    enc_text = Encoder(ENC_EMB_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, MAX_LENGTH)
-    dec_audio = Decoder(DEC_EMB_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, MAX_LENGTH)
+    enc = Encoder(ENC_EMB_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, MAX_LENGTH)
 
-    enc_audio = Encoder(ENC_EMB_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, MAX_LENGTH)
-    dec_text = Decoder(DEC_EMB_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, MAX_LENGTH)
+    dec = Decoder(DEC_EMB_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, MAX_LENGTH)
+
 
     SENT_HID_DIM = param_mtt['sent_hid_dim']
     SENT_FINAL_HID = param_mtt['sent_final_hid']
@@ -42,7 +41,7 @@ def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, e
     SRC_PAD_DIM = ENC_EMB_DIM
     TRG_PAD_DIM = DEC_EMB_DIM
 
-    model = Seq2SeqTransformer(enc_text, dec_audio, enc_audio, dec_text, SRC_PAD_DIM, TRG_PAD_DIM, regression, device).to(device)
+    model = Seq2SeqTransformer(enc, dec, SRC_PAD_DIM, TRG_PAD_DIM, regression, device).to(device)
     print(model)
     model.apply(init_weights)
 
@@ -59,15 +58,15 @@ def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, e
     train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, param_mtt, scheduler, device)
 
 
-def train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, params, scheduler, device):
+def  train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, params, scheduler, device):
     best_valid_loss = float('inf')
 
-    for epoch in range(0, N_EPOCHS):
+    for epoch in range(1, N_EPOCHS+1):
         start_time = time.time()
 
         train_loss, pred_train, labels_train = train(model, train_loader, optimizer, criterion, params, device)
         valid_loss, pred_val, labels_val = evaluate(model, valid_loader, criterion, params, device)
-        scheduler.step(valid_loss)
+        # scheduler.step(valid_loss)
         end_time = time.time()
 
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
@@ -78,25 +77,25 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
 
         if valid_loss < best_valid_loss:
             best_valid_loss = valid_loss
-            torch.save(model.state_dict(), 'mtt_fuse.pt')
+            torch.save(model.state_dict(), 'mtt_cyclic.pt')
 
-        print(f'Epoch: {epoch + 1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s')
+        print(f'Epoch: {epoch:02} | Epoch Time: {epoch_mins}m {epoch_secs}s')
         print(f'\tTrain Loss: {train_loss:.4f}%')
         print(f'\t Val. Loss: {valid_loss:.4f}%')
 
     # finally for test
     print("DEVICE: ", device)
-    model.load_state_dict(torch.load('mtt_fuse.pt', map_location=device))
+    model.load_state_dict(torch.load('mtt_cyclic.pt', map_location=device))
 
     test_loss, pred_test, labels_test = evaluate(model, test_loader, criterion, params, device)
     mosei_scores(pred_test, labels_test, message='Final Test Scores')
 
-
+    print(f'Minimum validation loss overall is {train_loss}')
     print(f'Test Loss: {test_loss:.4f} ')
 
 
 
-def train(model, train_loader, optimizer, criterion, params, device, clip=1):
+def train(model, train_loader, optimizer, criterion, params, device, clip=10):
 
     model.train()
     epoch_loss = 0
@@ -106,20 +105,20 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=1):
     for i_batch, (batch_X, batch_Y, batch_META) in enumerate(train_loader):
         sample_ind, text, audio, vision = batch_X
 
-        text = text.to(device=device)
-        audio = audio.to(device=device)
+        src = text.to(device=device)
+        trg = audio.to(device=device)
         label = batch_Y
         label = label.squeeze().to(device=device)
 
         optimizer.zero_grad()
 
-        output_audio, output_text, regression_score = model(text, audio, label)
+        decoded, regression_score = model(src, trg, label)
 
-        translate_loss = params['loss_dec_weight'] * criterion(output_audio, audio)
-        translate_cycle_loss = params['loss_dec_cycle_weight'] * criterion(output_text, text)
+        translate_loss = params['loss_dec_weight'] * 1.5 * criterion(decoded, trg)
+        # translate_cycle_loss = params['loss_dec_cycle_weight'] * criterion(cycled_decoded, src)
         translate_sent_loss = params['loss_regress_weight'] * criterion(regression_score, label)
 
-        combined_loss = translate_loss + translate_cycle_loss + translate_sent_loss
+        combined_loss = translate_loss + translate_sent_loss # + translate_cycle_loss
         combined_loss.backward()
 
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
@@ -148,18 +147,18 @@ def evaluate(model, valid_loader, criterion, params, device):
         for i_batch, (batch_X, batch_Y, batch_META) in enumerate(valid_loader):
             sample_ind, text, audio, vision = batch_X
 
-            text = text.to(device=device)
-            audio = audio.to(device=device)
+            src = text.to(device=device)
+            trg = audio.to(device=device)
             label = batch_Y
             label = label.squeeze().to(device=device)
 
-            output_audio, output_text, regression_score = model(text, audio, label)
+            decoded, cycled_decoded, regression_score = model(src, trg, label)
 
-            translate_loss = params['loss_dec_weight'] * criterion(output_audio, audio)
-            translate_cycle_loss = params['loss_dec_cycle_weight'] * criterion(output_text, text)
+            translate_loss = params['loss_dec_weight'] * 1.5 * criterion(decoded, trg)
+            # translate_cycle_loss = params['loss_dec_cycle_weight'] * criterion(cycled_decoded, src)
             translate_sent_loss = params['loss_regress_weight'] * criterion(regression_score, label)
 
-            combined_loss = translate_loss + translate_cycle_loss + translate_sent_loss
+            combined_loss = translate_loss + translate_sent_loss  # + translate_cycle_loss
             epoch_loss += combined_loss.item()
 
             preds.append(regression_score)
