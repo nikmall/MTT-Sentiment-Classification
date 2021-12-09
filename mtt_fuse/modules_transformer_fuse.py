@@ -199,14 +199,14 @@ class Attention(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, output_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length):
+    def __init__(self, output_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length, kdim, vdim):
         super().__init__()
 
         self.device = device
         # self.tok_embedding = nn.Embedding(output_dim, hid_dim)
         self.pos_embedding = nn.Embedding(max_length, hid_dim)
 
-        self.layers = nn.ModuleList([DecoderLayer(hid_dim, n_heads, pf_dim, dropout, device)
+        self.layers = nn.ModuleList([DecoderLayer(hid_dim, n_heads, pf_dim, dropout, device, kdim, vdim)
                                      for _ in range(n_layers)])
 
         self.fc_out = nn.Linear(hid_dim, output_dim)
@@ -245,7 +245,7 @@ class Decoder(nn.Module):
 
 
 class DecoderLayer(nn.Module):
-    def __init__(self, hid_dim, n_heads, pf_dim, dropout, device):
+    def __init__(self, hid_dim, n_heads, pf_dim, dropout, device, kdim, vdim):
         super().__init__()
 
         self.self_attn_layer_norm = nn.LayerNorm(hid_dim)
@@ -253,8 +253,10 @@ class DecoderLayer(nn.Module):
         self.ff_layer_norm = nn.LayerNorm(hid_dim)
 
         self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
-        self.encoder_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
 
+        # self.encoder_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
+        self.encoder_attention = nn.MultiheadAttention(hid_dim, n_heads, dropout, kdim =kdim,
+                                                       vdim = vdim, batch_first =True)
         self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
         self.dropout = nn.Dropout(dropout)
 
@@ -272,7 +274,7 @@ class DecoderLayer(nn.Module):
         # trg = [batch size, trg len, hid dim]
 
         # encoder attention
-        _trg, attention = self.encoder_attention(trg, enc_src, enc_src, src_mask)
+        _trg, attention = self.encoder_attention(trg, enc_src, enc_src, key_padding_mask =src_mask.squeeze())
 
         # dropout, residual connection and layer norm
         trg = self.enc_attn_layer_norm(trg + self.dropout(_trg))

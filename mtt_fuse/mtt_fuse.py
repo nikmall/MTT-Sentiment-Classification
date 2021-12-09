@@ -12,9 +12,9 @@ def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, e
 
     ENC_EMB_DIM = param_mtt['enc_emb_dim']
     # DEC_EMB_DIM = param_mtt['dec_emb_dim']
-    HID_DIM = param_mtt['hid_dim']  # same as text embedding
-    DED_HID_DIM = train_loader.dataset.audio.shape[2] + train_loader.dataset.vision.shape[2] \
-        if param_mtt["fuse_modalities"] else train_loader.dataset.audio.shape[2]
+    ENC_HID_DIM = param_mtt['hid_dim']  # same as text embedding
+    DED_HID_DIM = train_loader.dataset.audio.shape[2] + train_loader.dataset.vision.shape[2] + 3\
+        if param_mtt["fuse_modalities"] else train_loader.dataset.audio.shape[2] + 1
     DEC_EMB_DIM = DED_HID_DIM
     ENC_LAYERS = param_mtt['enc_layers']
     DEC_LAYERS = param_mtt['dec_layers']
@@ -27,9 +27,9 @@ def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, e
 
     MAX_LENGTH = train_loader.dataset.text.shape[1]
 
-    enc = Encoder(ENC_EMB_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, MAX_LENGTH)
+    enc = Encoder(ENC_EMB_DIM, ENC_HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, MAX_LENGTH)
 
-    dec = Decoder(DEC_EMB_DIM, DED_HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, MAX_LENGTH)
+    dec = Decoder(DEC_EMB_DIM, DED_HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, MAX_LENGTH, ENC_HID_DIM, ENC_HID_DIM)
 
 
     SENT_HID_DIM = param_mtt['sent_hid_dim']
@@ -114,12 +114,14 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=10):
             fused_a_v = torch.cat((audio, vision), dim=2)
             if params["cyclic"]:
                 fused_a_v = pad_modality(fused_a_v, text.shape[2], fused_a_v.shape[2])
-            trg = fused_a_v
+                trg = fused_a_v
+            else:
+                trg = pad_modality(fused_a_v, fused_a_v.shape[2] + 3, fused_a_v.shape[2]) # pad with 1 for divisions
         else:
             if params["cyclic"]:
                 trg = pad_modality(audio, text.shape[2], audio.shape[2])
             else:
-                trg = audio
+                trg = pad_modality(audio, audio.shape[2] + 1, audio.shape[2]) # pad with 1 for divisions
         trg = trg.to(device=device)
 
         label = batch_Y
@@ -167,10 +169,17 @@ def evaluate(model, valid_loader, criterion, params, device):
 
             if params["fuse_modalities"]:
                 fused_a_v = torch.cat((audio, vision), dim=2)
-                fused_padded_a_v = pad_modality(fused_a_v, text.shape[2], fused_a_v.shape[2])
-                trg = fused_padded_a_v
+                if params["cyclic"]:
+                    fused_a_v = pad_modality(fused_a_v, text.shape[2], fused_a_v.shape[2])
+                    trg = fused_a_v
+                else:
+                    trg = pad_modality(fused_a_v, fused_a_v.shape[2] + 3,
+                                       fused_a_v.shape[2])  # pad with 3 for divisions
             else:
-                trg = pad_modality(audio, text.shape[2], audio.shape[2])
+                if params["cyclic"]:
+                    trg = pad_modality(audio, text.shape[2], audio.shape[2])
+                else:
+                    trg = pad_modality(audio, audio.shape[2] + 1, audio.shape[2])  # pad with 1 for divisions
             trg = trg.to(device=device)
 
             label = batch_Y

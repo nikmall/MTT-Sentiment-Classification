@@ -1,15 +1,15 @@
 import numpy as np
 from torch.utils.data.dataset import Dataset
 import pickle
+import torch.nn.functional as F
 import os
 import torch
 
 
 
 def pad_modality(modality_tensor, max_dim, input_dim):
-    modality_tensor_trans = np.pad(modality_tensor,
-                         ((0, 0), (0, max_dim - input_dim)),
-                         'constant')
+    modality_tensor_trans = F.pad(modality_tensor,
+                         ( (0, max_dim - input_dim)), 'constant', 0)
     return modality_tensor_trans
 
 

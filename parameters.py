@@ -52,7 +52,7 @@ param_mtt_fuse = {
     "enc_layers": 3,
     "dec_layers": 3,
     "enc_heads": 4,
-    "dec_heads": 4,
+    "dec_heads": 3, # for divisions
     "enc_pf_dim": 480,
     "dec_pf_dim": 440,
     "enc_dropout": 0.31,
