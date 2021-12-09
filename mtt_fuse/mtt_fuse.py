@@ -6,13 +6,16 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from mtt_fuse.modules_transformer_fuse import Encoder, Decoder, SentRegressor, Seq2SeqTransformer
 from tools import epoch_time, init_weights, count_parameters
 from score_metrics import mosei_scores
-
+from dataset import pad_modality
 
 def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, epochs):
 
     ENC_EMB_DIM = param_mtt['enc_emb_dim']
-    DEC_EMB_DIM = param_mtt['dec_emb_dim']
+    # DEC_EMB_DIM = param_mtt['dec_emb_dim']
     HID_DIM = param_mtt['hid_dim']  # same as text embedding
+    DED_HID_DIM = train_loader.dataset.audio.shape[2] + train_loader.dataset.audio.shape[1] \
+        if param_mtt["fuse_modalities"] else train_loader.dataset.audio.shape[2]
+    DEC_EMB_DIM = DED_HID_DIM
     ENC_LAYERS = param_mtt['enc_layers']
     DEC_LAYERS = param_mtt['dec_layers']
     ENC_HEADS = param_mtt['enc_heads']
@@ -58,7 +61,7 @@ def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, e
     train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, param_mtt, scheduler, device)
 
 
-def  train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, params, scheduler, device):
+def train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, params, scheduler, device):
     best_valid_loss = float('inf')
 
     for epoch in range(1, N_EPOCHS+1):
@@ -106,7 +109,19 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=10):
         sample_ind, text, audio, vision = batch_X
 
         src = text.to(device=device)
-        trg = audio.to(device=device)
+
+        if params["fuse_modalities"]:
+            fused_a_v = torch.cat((audio, vision), dim=2)
+            if params["cyclic"]:
+                fused_a_v = pad_modality(fused_a_v, text.shape[2], fused_a_v.shape[2])
+            trg = fused_a_v
+        else:
+            if params["cyclic"]:
+                trg = pad_modality(audio, text.shape[2], audio.shape[2])
+            else:
+                trg = audio
+        trg = trg.to(device=device)
+
         label = batch_Y
         label = label.squeeze().to(device=device)
 
@@ -115,7 +130,8 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=10):
         decoded, regression_score = model(src, trg, label)
 
         translate_loss = params['loss_dec_weight'] * 1.5 * criterion(decoded, trg)
-        # translate_cycle_loss = params['loss_dec_cycle_weight'] * criterion(cycled_decoded, src)
+        #if params["cyclic"]:
+        #    translate_cycle_loss = params['loss_dec_cycle_weight'] * criterion(cycled_decoded, src)
         translate_sent_loss = params['loss_regress_weight'] * criterion(regression_score, label)
 
         combined_loss = translate_loss + translate_sent_loss # + translate_cycle_loss
@@ -148,7 +164,15 @@ def evaluate(model, valid_loader, criterion, params, device):
             sample_ind, text, audio, vision = batch_X
 
             src = text.to(device=device)
-            trg = audio.to(device=device)
+
+            if params["fuse_modalities"]:
+                fused_a_v = torch.cat((audio, vision), dim=2)
+                fused_padded_a_v = pad_modality(fused_a_v, text.shape[2], fused_a_v.shape[2])
+                trg = fused_padded_a_v
+            else:
+                trg = pad_modality(audio, text.shape[2], audio.shape[2])
+            trg = trg.to(device=device)
+
             label = batch_Y
             label = label.squeeze().to(device=device)
 

@@ -203,7 +203,7 @@ class Decoder(nn.Module):
         super().__init__()
 
         self.device = device
-        self.tok_embedding = nn.Embedding(output_dim, hid_dim)
+        # self.tok_embedding = nn.Embedding(output_dim, hid_dim)
         self.pos_embedding = nn.Embedding(max_length, hid_dim)
 
         self.layers = nn.ModuleList([DecoderLayer(hid_dim, n_heads, pf_dim, dropout, device)

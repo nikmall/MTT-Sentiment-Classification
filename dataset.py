@@ -6,15 +6,15 @@ import torch
 
 
 
-def pad_audio(audio, max_dim, audio_dim):
-    audio_trans = np.pad(audio,
-                         ((0, 0), (0, max_dim - audio_dim)),
+def pad_modality(modality_tensor, max_dim, input_dim):
+    modality_tensor_trans = np.pad(modality_tensor,
+                         ((0, 0), (0, max_dim - input_dim)),
                          'constant')
-    return audio_trans
+    return modality_tensor_trans
 
 
 class Multimodal_Datasets(Dataset):
-    def __init__(self, dataset_path, data='mosei_senti', split_type='train', if_align=True, transform_audio=True):
+    def __init__(self, dataset_path, data='mosei_senti', split_type='train', if_align=True, pad_audio=False):
         super(Multimodal_Datasets, self).__init__()
 
         dataset_path = os.path.join(dataset_path, data + '_data.pkl' if if_align else data + '_data_noalign.pkl')
@@ -32,7 +32,7 @@ class Multimodal_Datasets(Dataset):
         self.meta = dataset[split_type]['id'] if 'id' in dataset[split_type].keys() else None
         self.data = data
         self.n_modalities = 3  # vision/ text/ audio
-        self.transform_audio = transform_audio
+        # self.transform_audio = pad_audio
 
     def get_n_modalities(self):
         return self.n_modalities
@@ -53,8 +53,8 @@ class Multimodal_Datasets(Dataset):
     def __getitem__(self, index):
         audio = self.audio[index]
         # pad audio dimension to text max dim
-        if self.transform_audio:
-            audio = pad_audio(audio, self.text.shape[2], self.audio.shape[2])
+        #if self.transform_audio:
+        #    audio = pad_modality(audio, self.text.shape[2], self.audio.shape[2])
 
         X = (index, self.text[index], audio, self.vision[index])
         Y = self.labels[index]
