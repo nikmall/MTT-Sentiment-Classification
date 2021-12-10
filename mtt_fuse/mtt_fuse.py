@@ -1,7 +1,7 @@
 import time
 from torch import optim
 import torch
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.optim.lr_scheduler import ReduceLROnPlateau, MultiStepLR
 
 from mtt_fuse.modules_transformer_fuse import Encoder, Decoder, SentRegressor, Seq2SeqTransformer
 from tools import epoch_time, init_weights, count_parameters
@@ -51,10 +51,11 @@ def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, e
 
     print(f'The model has {count_parameters(model):,} trainable parameters')
 
-    init_lr = 0.001
+    init_lr = 0.0007
     min_lr = 0.0001
     optimizer = optim.Adam(model.parameters(), init_lr)
-    scheduler = StepLR(optimizer, step_size=5, gamma=0.1)
+   # scheduler = StepLR(optimizer, step_size=5, gamma=0.1)
+    scheduler = MultiStepLR(optimizer, milestones=[3,5,8, 15, 20, 26, 40, 45], gamma=0.1)
     criterion = torch.nn.MSELoss()
     #scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=param_mtt['lr_patience'], min_lr=min_lr,
     #                              factor=0.1, verbose=True)
