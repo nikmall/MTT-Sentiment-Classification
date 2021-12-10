@@ -63,7 +63,7 @@ class Encoder(nn.Module):
 
 class EncoderLayer(nn.Module):
     def __init__(self, hid_dim, n_heads, pf_dim, dropout, device):
-        super(EncoderLayer, self).__init__()
+        super().__init__()
 
         self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
         self.self_attn_layer_norm = nn.LayerNorm(hid_dim)
@@ -98,7 +98,7 @@ class EncoderLayer(nn.Module):
 
 class MultiHeadAttentionLayer(nn.Module):
     def __init__(self, hid_dim, n_heads, dropout, device):
-        super(MultiHeadAttentionLayer, self).__init__()
+        super().__init__()
 
         assert hid_dim % n_heads == 0
 
@@ -165,7 +165,7 @@ class MultiHeadAttentionLayer(nn.Module):
 
 class PositionwiseFeedforwardLayer(nn.Module):
     def __init__(self, hid_dim, pf_dim, dropout, out_hid_dim=''):
-        super(PositionwiseFeedforwardLayer, self).__init__()
+        super().__init__()
 
         self.fc_1 = nn.Linear(hid_dim, pf_dim)
         self.fc_2 = nn.Linear(pf_dim, hid_dim)
@@ -186,7 +186,7 @@ class PositionwiseFeedforwardLayer(nn.Module):
 
 class Attention(nn.Module):
     def __init__(self, enc_hid_dim, dec_hid_dim):
-        super(Attention, self).__init__()
+        super().__init__()
 
         self.attn = nn.Linear((enc_hid_dim * 2) + dec_hid_dim, dec_hid_dim)
         self.v = nn.Linear(dec_hid_dim, 1, bias=False)
@@ -219,7 +219,7 @@ class Attention(nn.Module):
 
 class Decoder(nn.Module):
     def __init__(self, output_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length):
-        super(Decoder, self).__init__()
+        super().__init__()
 
         self.device = device
 
@@ -266,7 +266,7 @@ class Decoder(nn.Module):
 
 class DecoderLayer(nn.Module):
     def __init__(self, hid_dim, n_heads, pf_dim, dropout, device):
-        super(DecoderLayer, self).__init__()
+        super().__init__()
 
         self.self_attn_layer_norm = nn.LayerNorm(hid_dim)
         self.enc_attn_layer_norm = nn.LayerNorm(hid_dim)
@@ -361,7 +361,7 @@ class SentRegressor(nn.Module):
 
 class Seq2SeqTransformer(nn.Module):
     def __init__(self, encoder, decoder, src_pad_dim, trg_pad_dim, regression, encoder_2, device):
-        super(Seq2SeqTransformer, self).__init__()
+        super().__init__()
 
         self.encoder = encoder
         self.decoder = decoder
