@@ -307,7 +307,7 @@ class SentRegressor(nn.Module):
             self.fc = nn.Linear(self.hidden_dim * self.n_layers, self.output_dim)
         self.fc2 = nn.Linear(self.output_dim, 1)
         self.dropout = nn.Dropout(dropout)
-
+        self.gelu = nn.GELU()
     def forward(self, encoded):
         output, (hidden, cell) = self.lstm(encoded)
         if self.n_layers == 2:
@@ -315,7 +315,8 @@ class SentRegressor(nn.Module):
         else:
             hidden = hidden.squeeze()
             hidden = self.dropout(hidden)
-        fc_out = F.relu(self.fc(hidden))
+        #fc_out = F.relu(self.fc(hidden))
+        fc_out = self.gelu(self.fc(hidden))
         final_out = self.fc2(fc_out)
 
         return final_out.squeeze()
