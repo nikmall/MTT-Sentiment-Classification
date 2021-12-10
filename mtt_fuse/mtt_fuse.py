@@ -7,6 +7,7 @@ from mtt_fuse.modules_transformer_fuse import Encoder, Decoder, SentRegressor, S
 from tools import epoch_time, init_weights, count_parameters
 from score_metrics import mosei_scores
 from dataset import pad_modality
+from torch.optim.lr_scheduler import StepLR
 
 def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, epochs):
 
@@ -50,12 +51,13 @@ def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, e
 
     print(f'The model has {count_parameters(model):,} trainable parameters')
 
-    init_lr = 0.0009
+    init_lr = 0.001
     min_lr = 0.0001
     optimizer = optim.Adam(model.parameters(), init_lr)
+    scheduler = StepLR(optimizer, step_size=5, gamma=0.1)
     criterion = torch.nn.MSELoss()
-    scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=param_mtt['lr_patience'], min_lr=min_lr,
-                                  factor=0.1, verbose=True)
+    #scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=param_mtt['lr_patience'], min_lr=min_lr,
+    #                              factor=0.1, verbose=True)
 
 
     train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, param_mtt, scheduler, device)
@@ -69,7 +71,8 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
 
         train_loss, pred_train, labels_train = train(model, train_loader, optimizer, criterion, params, device)
         valid_loss, pred_val, labels_val = evaluate(model, valid_loader, criterion, params, device)
-        scheduler.step(valid_loss)
+        # scheduler.step(valid_loss)
+        scheduler.step()
         end_time = time.time()
 
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
@@ -98,7 +101,7 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
 
 
 
-def train(model, train_loader, optimizer, criterion, params, device, clip=1):
+def train(model, train_loader, optimizer, criterion, params, device, clip=10):
 
     model.train()
     epoch_loss = 0
