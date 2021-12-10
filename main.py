@@ -16,7 +16,7 @@ if torch.cuda.is_available():
     # torch.set_default_tensor_type('torch.cuda.FloatTensor')
     device = torch.device("cuda")
 
-# torch.backends.cudnn.enabled = False
+torch.backends.cudnn.enabled = False
 
 def main():
     parser = argparse.ArgumentParser(description='CMU-MOSEI Sentiment Classifier')

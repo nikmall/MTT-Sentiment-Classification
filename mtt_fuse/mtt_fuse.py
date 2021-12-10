@@ -98,7 +98,7 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
 
 
 
-def train(model, train_loader, optimizer, criterion, params, device, clip=10):
+def train(model, train_loader, optimizer, criterion, params, device, clip=1):
 
     model.train()
     epoch_loss = 0
