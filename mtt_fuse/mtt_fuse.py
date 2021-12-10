@@ -50,7 +50,7 @@ def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, e
 
     print(f'The model has {count_parameters(model):,} trainable parameters')
 
-    init_lr = 0.0001
+    init_lr = 0.0009
     min_lr = 0.0001
     optimizer = optim.Adam(model.parameters(), init_lr)
     criterion = torch.nn.MSELoss()
@@ -69,7 +69,7 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
 
         train_loss, pred_train, labels_train = train(model, train_loader, optimizer, criterion, params, device)
         valid_loss, pred_val, labels_val = evaluate(model, valid_loader, criterion, params, device)
-        # scheduler.step(valid_loss)
+        scheduler.step(valid_loss)
         end_time = time.time()
 
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
