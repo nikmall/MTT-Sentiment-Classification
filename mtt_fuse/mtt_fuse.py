@@ -14,7 +14,7 @@ def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, e
     ENC_EMB_DIM = param_mtt['enc_emb_dim']
     # DEC_EMB_DIM = param_mtt['dec_emb_dim']
     ENC_HID_DIM = param_mtt['hid_dim']  # same as text embedding
-    DED_HID_DIM = train_loader.dataset.audio.shape[2] + train_loader.dataset.vision.shape[2] + 3\
+    DED_HID_DIM = train_loader.dataset.audio.shape[2] + train_loader.dataset.vision.shape[2] + 2\
         if param_mtt["fuse_modalities"] else train_loader.dataset.audio.shape[2] + 1
     DEC_EMB_DIM = DED_HID_DIM
     ENC_LAYERS = param_mtt['enc_layers']
@@ -122,7 +122,7 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=10):
                 fused_a_v = pad_modality(fused_a_v, text.shape[2], fused_a_v.shape[2])
                 trg = fused_a_v
             else:
-                trg = pad_modality(fused_a_v, fused_a_v.shape[2] + 3, fused_a_v.shape[2]) # pad with 1 for divisions
+                trg = pad_modality(fused_a_v, fused_a_v.shape[2] + 2, fused_a_v.shape[2]) # pad with 1 for divisions
         else:
             if params["cyclic"]:
                 trg = pad_modality(audio, text.shape[2], audio.shape[2])
@@ -181,8 +181,7 @@ def evaluate(model, valid_loader, criterion, params, device):
                     fused_a_v = pad_modality(fused_a_v, text.shape[2], fused_a_v.shape[2])
                     trg = fused_a_v
                 else:
-                    trg = pad_modality(fused_a_v, fused_a_v.shape[2] + 3,
-                                       fused_a_v.shape[2])  # pad with 3 for divisions
+                    trg = pad_modality(fused_a_v, fused_a_v.shape[2] + 2, fused_a_v.shape[2])  # pad with 3 for divisions
             else:
                 if params["cyclic"]:
                     trg = pad_modality(audio, text.shape[2], audio.shape[2])

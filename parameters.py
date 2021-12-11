@@ -69,6 +69,6 @@ param_mtt_fuse = {
     'loss_dec_cycle_weight': 0.1,
     'loss_regress_weight': 0.9,
 
-    "fuse_modalities": False,
+    "fuse_modalities": True,
     "cyclic": False
 }
