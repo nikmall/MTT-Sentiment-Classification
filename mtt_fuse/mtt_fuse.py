@@ -51,12 +51,14 @@ def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, e
 
     print(f'The model has {count_parameters(model):,} trainable parameters')
 
-    init_lr = 0.001
+    init_lr = 0.0001
     min_lr = 0.0001
     optimizer = optim.Adam(model.parameters(), init_lr)
    # scheduler = StepLR(optimizer, step_size=5, gamma=0.1)
     scheduler = MultiStepLR(optimizer, milestones=[5], gamma=0.1, verbose=True)
-    criterion = torch.nn.MSELoss()
+    criter_tran = torch.nn.MSELoss()
+    criter_regr = torch.nn.L1Loss()
+    criterion = (criter_tran, criter_regr)
     #scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=param_mtt['lr_patience'], min_lr=min_lr,
     #                              factor=0.1, verbose=True)
 
@@ -73,7 +75,7 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
         train_loss, pred_train, labels_train = train(model, train_loader, optimizer, criterion, params, device)
         valid_loss, pred_val, labels_val = evaluate(model, valid_loader, criterion, params, device)
         # scheduler.step(valid_loss)
-        scheduler.step()
+        # scheduler.step()
         end_time = time.time()
 
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
@@ -135,10 +137,12 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=10):
 
         decoded, regression_score = model(src, trg, label)
 
-        translate_loss = params['loss_dec_weight'] * criterion(decoded, trg)
+        criter_tran = criterion[0]
+        criter_regr = criterion[1]
+        translate_loss = params['loss_dec_weight'] * criter_tran(decoded, trg)
         #if params["cyclic"]:
         #    translate_cycle_loss = params['loss_dec_cycle_weight'] * criterion(cycled_decoded, src)
-        translate_sent_loss = params['loss_regress_weight'] * criterion(regression_score, label)
+        translate_sent_loss = params['loss_regress_weight'] * criter_regr(regression_score, label)
 
         combined_loss = translate_loss + translate_sent_loss # + translate_cycle_loss
         combined_loss.backward()
@@ -191,9 +195,12 @@ def evaluate(model, valid_loader, criterion, params, device):
 
             decoded, regression_score = model(src, trg, label)
 
-            translate_loss = params['loss_dec_weight'] * criterion(decoded, trg)
-            # translate_cycle_loss = params['loss_dec_cycle_weight'] * criterion(cycled_decoded, src)
-            translate_sent_loss = params['loss_regress_weight'] * criterion(regression_score, label)
+            criter_tran = criterion[0]
+            criter_regr = criterion[1]
+            translate_loss = params['loss_dec_weight'] * criter_tran(decoded, trg)
+            # if params["cyclic"]:
+            #    translate_cycle_loss = params['loss_dec_cycle_weight'] * criterion(cycled_decoded, src)
+            translate_sent_loss = params['loss_regress_weight'] * criter_regr(regression_score, label)
 
             combined_loss = translate_loss + translate_sent_loss  # + translate_cycle_loss
             epoch_loss += combined_loss.item()
