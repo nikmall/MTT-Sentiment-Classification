@@ -56,7 +56,7 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
     init_lr = 0.0001
     min_lr = 0.0001
     optimizer = optim.Adam(model.parameters(), init_lr)
-    criter_tran = torch.nn.MSELoss()
+    criter_tran = torch.nn.L1Loss()
     criter_regr = torch.nn.L1Loss()
     criterion = (criter_tran, criter_regr)
     scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=param_mtt['lr_patience'], min_lr=min_lr,
