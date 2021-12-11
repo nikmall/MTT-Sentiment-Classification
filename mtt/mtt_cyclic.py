@@ -6,6 +6,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from mtt.modules_transformer import Encoder, Decoder, SentRegressor, Seq2SeqTransformer
 from tools import epoch_time, init_weights, count_parameters
 from score_metrics import mosei_scores
+from dataset import pad_modality
 
 
 def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device, epochs):
@@ -53,7 +54,9 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
     init_lr = 0.0001
     min_lr = 0.0001
     optimizer = optim.Adam(model.parameters(), init_lr)
-    criterion = torch.nn.MSELoss()
+    criter_tran = torch.nn.MSELoss()
+    criter_regr = torch.nn.L1Loss()
+    criterion = (criter_tran, criter_regr)
     scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=param_mtt['lr_patience'], min_lr=min_lr,
                                   factor=0.1, verbose=True)
 
@@ -109,7 +112,8 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=10):
         sample_ind, text, audio, vision = batch_X
 
         src = text.to(device=device)
-        trg = audio.to(device=device)
+        trg = pad_modality(audio, text.shape[2], audio.shape[2])
+        trg = trg.to(device=device)
         label = batch_Y
         label = label.squeeze().to(device=device)
 
@@ -117,9 +121,11 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=10):
 
         decoded, cycled_decoded, regression_score = model(src, trg, label)
 
-        translate_loss = params['loss_dec_weight'] * criterion(decoded, trg)
-        translate_cycle_loss = params['loss_dec_cycle_weight'] * criterion(cycled_decoded, src)
-        translate_sent_loss = params['loss_regress_weight'] * criterion(regression_score, label)
+        criter_tran = criterion[0]
+        criter_regr = criterion[1]
+        translate_loss = params['loss_dec_weight'] * criter_tran(decoded, trg)
+        translate_cycle_loss = params['loss_dec_cycle_weight'] * criter_tran(cycled_decoded, src)
+        translate_sent_loss = params['loss_regress_weight'] * criter_regr(regression_score, label)
 
         combined_loss = translate_loss + translate_cycle_loss + translate_sent_loss
         combined_loss.backward()
@@ -151,15 +157,18 @@ def evaluate(model, valid_loader, criterion, params, device):
             sample_ind, text, audio, vision = batch_X
 
             src = text.to(device=device)
-            trg = audio.to(device=device)
+            trg = pad_modality(audio, text.shape[2], audio.shape[2])
+            trg = trg.to(device=device)
             label = batch_Y
             label = label.squeeze().to(device=device)
 
             decoded, cycled_decoded, regression_score = model(src, trg, label)
 
-            translate_loss = params['loss_dec_weight'] * criterion(decoded, trg)
-            translate_cycle_loss = params['loss_dec_cycle_weight'] * criterion(cycled_decoded, src)
-            translate_sent_loss = params['loss_regress_weight'] * criterion(regression_score, label)
+            criter_tran = criterion[0]
+            criter_regr = criterion[1]
+            translate_loss = params['loss_dec_weight'] * criter_tran(decoded, trg)
+            translate_cycle_loss = params['loss_dec_cycle_weight'] * criter_tran(cycled_decoded, src)
+            translate_sent_loss = params['loss_regress_weight'] * criter_regr(regression_score, label)
 
             combined_loss = translate_loss + translate_cycle_loss + translate_sent_loss
             epoch_loss += combined_loss.item()
