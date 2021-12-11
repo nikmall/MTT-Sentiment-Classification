@@ -3,7 +3,7 @@ from torch import optim
 import torch
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-from mtt.modules_transformer import Encoder, Decoder, SentRegressor, Seq2SeqTransformer
+from mtt.modules_transformer import Encoder, Decoder, SentRegressor, SentRegressorRNN, Seq2SeqTransformer, Seq2SeqTransformerRNN
 from tools import epoch_time, init_weights, count_parameters
 from score_metrics import mosei_scores
 from dataset import pad_modality
@@ -37,14 +37,16 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
 
     N_EPOCHS = epochs if epochs is not None else param_mtt['n_epochs']
 
-    encoder_2 = Encoder(ENC_EMB_DIM, HID_DIM, 2, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, MAX_LENGTH_ENC)
+    # encoder_2 = Encoder(ENC_EMB_DIM, HID_DIM, 2, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, MAX_LENGTH_ENC)
+    # regression = SentRegressor(ENC_EMB_DIM, SENT_HID_DIM, SENT_FINAL_HID, SENT_N_LAYERS, device) #, SENT_DROPOUT) #, encoder_2)
 
-    regression = SentRegressor(ENC_EMB_DIM, SENT_HID_DIM, SENT_FINAL_HID, SENT_N_LAYERS, device) #, SENT_DROPOUT) #, encoder_2)
+    regression = SentRegressorRNN(ENC_EMB_DIM, SENT_HID_DIM, SENT_FINAL_HID, SENT_N_LAYERS, SENT_DROPOUT)
 
     SRC_PAD_DIM = ENC_EMB_DIM
     TRG_PAD_DIM = DEC_EMB_DIM
 
-    model = Seq2SeqTransformer(enc, dec, SRC_PAD_DIM, TRG_PAD_DIM, regression, encoder_2, device).to(device)
+    model = Seq2SeqTransformerRNN(enc, dec, SRC_PAD_DIM, TRG_PAD_DIM, regression, device).to(device)
+    # model = Seq2SeqTransformer(enc, dec, SRC_PAD_DIM, TRG_PAD_DIM, regression, encoder_2, device).to(device)
     print(model)
 
     model.apply(init_weights)
@@ -60,11 +62,10 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
     scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=param_mtt['lr_patience'], min_lr=min_lr,
                                   factor=0.1, verbose=True)
 
-
     train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, param_mtt, scheduler, device)
 
 
-def  train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, params, scheduler, device):
+def train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, params, scheduler, device):
     best_valid_loss = float('inf')
 
     for epoch in range(1, N_EPOCHS+1):
