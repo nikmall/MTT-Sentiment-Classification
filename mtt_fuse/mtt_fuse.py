@@ -57,7 +57,7 @@ def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, e
    # scheduler = StepLR(optimizer, step_size=5, gamma=0.1)
     scheduler = MultiStepLR(optimizer, milestones=[5], gamma=0.1, verbose=True)
     criter_tran = torch.nn.MSELoss()
-    criter_regr = torch.nn.L1Loss()
+    criter_regr = torch.nn.MSELoss()
     criterion = (criter_tran, criter_regr)
     #scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=param_mtt['lr_patience'], min_lr=min_lr,
     #                              factor=0.1, verbose=True)
