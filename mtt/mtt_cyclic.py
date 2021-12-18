@@ -56,8 +56,8 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
     init_lr = 0.0001
     min_lr = 0.0001
     optimizer = optim.Adam(model.parameters(), init_lr)
-    criter_tran = torch.nn.L1Loss()
-    criter_regr = torch.nn.L1Loss()
+    criter_tran = torch.nn.MSELoss()
+    criter_regr = torch.nn.MSELoss()
     criterion = (criter_tran, criter_regr)
     scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=param_mtt['lr_patience'], min_lr=min_lr,
                                   factor=0.1, verbose=True)
@@ -113,7 +113,12 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=10):
         sample_ind, text, audio, vision = batch_X
 
         src = text.to(device=device)
-        trg = pad_modality(audio, text.shape[2], audio.shape[2])
+        if params["fuse_modalities"]:
+            fused_a_v = torch.cat((audio, vision), dim=2)
+            fused_a_v = pad_modality(fused_a_v, text.shape[2], fused_a_v.shape[2])
+            trg = fused_a_v
+        else:
+            trg = pad_modality(audio, text.shape[2], audio.shape[2])
         trg = trg.to(device=device)
         label = batch_Y
         label = label.squeeze().to(device=device)
@@ -158,7 +163,12 @@ def evaluate(model, valid_loader, criterion, params, device):
             sample_ind, text, audio, vision = batch_X
 
             src = text.to(device=device)
-            trg = pad_modality(audio, text.shape[2], audio.shape[2])
+            if params["fuse_modalities"]:
+                fused_a_v = torch.cat((audio, vision), dim=2)
+                fused_a_v = pad_modality(fused_a_v, text.shape[2], fused_a_v.shape[2])
+                trg = fused_a_v
+            else:
+                trg = pad_modality(audio, text.shape[2], audio.shape[2])
             trg = trg.to(device=device)
             label = batch_Y
             label = label.squeeze().to(device=device)
