@@ -1,10 +1,12 @@
+from builtins import type
+
 import torch
 import os
 from dataset import Multimodal_Datasets
 from torch.utils.data import DataLoader
 from parameters import param
 
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 
 def get_data(dataset, split='train'):
@@ -35,12 +37,15 @@ def get_dataloaders(dataset, scale=True):
 
     return train_loader, valid_loader, test_loader
 
-def scale_data(train_data, valid_data, test_data):
+def scale_data(train_data, valid_data, test_data, type='min_max'):
     # audio
     train_audio = train_data.audio.detach().numpy()
     audio_shape = train_audio.shape
     train_audio = train_audio.reshape(audio_shape[0] * audio_shape[1], audio_shape[2])
-    audio_scaler = StandardScaler()
+    if type == 'min_max':
+        audio_scaler = MinMaxScaler()
+    else:
+        audio_scaler = StandardScaler()
     audio_scaler.fit(train_audio)
     train_audio = audio_scaler.transform(train_audio)
     train_data.audio = torch.tensor(train_audio.reshape(audio_shape[0], audio_shape[1], audio_shape[2])).cpu().detach()
@@ -59,7 +64,10 @@ def scale_data(train_data, valid_data, test_data):
     train_text = train_data.text.detach().numpy()
     text_shape = train_text.shape
     train_text = train_text.reshape(text_shape[0] * text_shape[1], text_shape[2])
-    text_scaler = StandardScaler()
+    if type == 'min_max':
+        text_scaler = MinMaxScaler()
+    else:
+        text_scaler = StandardScaler()
     text_scaler.fit(train_text)
     train_text = text_scaler.transform(train_text)
     train_data.text = torch.tensor(train_text.reshape(-1, text_shape[1], text_shape[2])).cpu().detach()
@@ -78,7 +86,10 @@ def scale_data(train_data, valid_data, test_data):
     train_vision = train_data.vision.detach().numpy()
     vision_shape = train_vision.shape
     train_vision = train_vision.reshape(vision_shape[0] * vision_shape[1], vision_shape[2])
-    vision_scaler = StandardScaler()
+    if type == 'min_max':
+        vision_scaler = MinMaxScaler()
+    else:
+        vision_scaler = StandardScaler()
     train_vision = vision_scaler.fit_transform(train_vision)
     train_data.vision = torch.tensor(train_vision.reshape(-1, vision_shape[1], vision_shape[2])).cpu().detach()
 
