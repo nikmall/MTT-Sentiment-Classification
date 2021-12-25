@@ -37,7 +37,7 @@ def get_dataloaders(dataset, scale=True):
 
     return train_loader, valid_loader, test_loader
 
-def scale_data(train_data, valid_data, test_data, type='min_max'):
+def scale_data(train_data, valid_data, test_data, type='stand'):
     # audio
     train_audio = train_data.audio.detach().numpy()
     audio_shape = train_audio.shape

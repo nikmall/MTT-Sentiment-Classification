@@ -78,6 +78,10 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
 
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
 
+        print(f'Epoch: {epoch:02} | Epoch Time: {epoch_mins}m {epoch_secs}s')
+        print(f'\tTrain Loss: {train_loss:.4f}%')
+        print(f'\t Val. Loss: {valid_loss:.4f}%')
+
         if epoch % 10 == 0 and epoch > 0:
             mosei_scores(pred_train, labels_train, message="Train Scores at epoch {}".format(epoch))
             mosei_scores(pred_val, labels_val, message="Val Scores at epoch {}".format(epoch))
@@ -86,16 +90,14 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
             best_valid_loss = valid_loss
             torch.save(model.state_dict(), 'mtt_cyclic.pt')
 
-        print(f'Epoch: {epoch:02} | Epoch Time: {epoch_mins}m {epoch_secs}s')
-        print(f'\tTrain Loss: {train_loss:.4f}%')
-        print(f'\t Val. Loss: {valid_loss:.4f}%')
+    test_loss, pred_test, labels_test = evaluate(model, test_loader, criterion, params, device)
+    mosei_scores(pred_test, labels_test, message='On current epoch model -  Test Scores')
+    print('')
 
-    # finally for test
-    print("DEVICE: ", device)
     model.load_state_dict(torch.load('mtt_cyclic.pt', map_location=device))
 
     test_loss, pred_test, labels_test = evaluate(model, test_loader, criterion, params, device)
-    mosei_scores(pred_test, labels_test, message='Final Test Scores')
+    mosei_scores(pred_test, labels_test, message='Final Test Scores on best val error model')
 
     print(f'Minimum validation loss overall is {train_loss}')
     print(f'Test Loss: {test_loss:.4f} ')
