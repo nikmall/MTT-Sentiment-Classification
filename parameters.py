@@ -36,7 +36,7 @@ param_mtt = {
     "sent_hid_dim": 256,
     "sent_final_hid": 128,
     "sent_dropout": 0.31,
-    "sent_n_layers": 1,
+    "sent_n_layers": 2,
 
     "n_epochs": 150,
     'lr_patience': 20,
