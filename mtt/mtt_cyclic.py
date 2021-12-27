@@ -34,13 +34,14 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
     SENT_FINAL_HID = param_mtt['sent_final_hid']
     SENT_N_LAYERS = param_mtt['sent_n_layers']
     SENT_DROPOUT = param_mtt['sent_dropout']
+    BIDIRECT = param_mtt['bidirect']
 
     N_EPOCHS = epochs if epochs is not None else param_mtt['n_epochs']
 
     # encoder_2 = Encoder(ENC_EMB_DIM, HID_DIM, 2, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, MAX_LENGTH_ENC)
     # regression = SentRegressor(ENC_EMB_DIM, SENT_HID_DIM, SENT_FINAL_HID, SENT_N_LAYERS, device) #, SENT_DROPOUT) #, encoder_2)
 
-    regression = SentRegressorRNN(ENC_EMB_DIM, SENT_HID_DIM, SENT_FINAL_HID, SENT_N_LAYERS, SENT_DROPOUT)
+    regression = SentRegressorRNN(ENC_EMB_DIM, SENT_HID_DIM, SENT_FINAL_HID, SENT_N_LAYERS, SENT_DROPOUT, BIDIRECT)
 
     SRC_PAD_DIM = ENC_EMB_DIM
     TRG_PAD_DIM = DEC_EMB_DIM

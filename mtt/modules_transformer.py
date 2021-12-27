@@ -316,24 +316,24 @@ class SentRegressorRNN(nn.Module):
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
         self.n_layers = n_layers
+        self.bidirect = bidirect
 
-        self.lstm = nn.LSTM(self.input_dim, self.hidden_dim, bidirectional=bidirect, dropout=dropout,
+        self.lstm = nn.LSTM(input_size=self.input_dim,hidden_size= self.hidden_dim, bidirectional=self.bidirect, dropout=dropout,
                             num_layers=self.n_layers, batch_first=True)
-        if bidirect:
-            self.fc = nn.Linear(self.hidden_dim * self.n_layers * 2, self.output_dim)
+        if self.bidirect:
+            self.fc = nn.Linear(self.hidden_dim * 2, self.output_dim)
         else:
-            self.fc = nn.Linear(self.hidden_dim * self.n_layers, self.output_dim)
+            self.fc = nn.Linear(self.hidden_dim, self.output_dim)
         self.fc2 = nn.Linear(self.output_dim, 1)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, encoded):
         output, (hidden, cell) = self.lstm(encoded)
-        if self.n_layers == 2:
-            hidden = self.dropout(torch.cat((hidden[-2, :, :], hidden[-1, :, :]), dim=1))
+        if self.bidirect:
+            hidden_out = self.dropout(torch.cat((hidden[-2, :, :], hidden[-1, :, :]), dim=1))
         else:
-            hidden = hidden.squeeze()
-            hidden = self.dropout(hidden)
-        fc_out = F.relu(self.fc(hidden))
+            hidden_out = self.dropout(hidden[-1, :, :])
+        fc_out = F.relu(self.fc(hidden_out))
         final_out = self.fc2(fc_out)
 
         return final_out.squeeze()
