@@ -29,13 +29,13 @@ class Encoder(nn.Module):
 
         self.device = device
 
-        self.pos_encoder = PositionalEncoding(hid_dim, max_length)
+        # self.pos_encoder = PositionalEncoding(hid_dim, max_length)
 
         self.layers = nn.ModuleList([EncoderLayer(hid_dim, n_heads, pf_dim, dropout, device) for _ in range(n_layers)])
 
         self.dropout = nn.Dropout(dropout)
 
-        self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(device)
+        # self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(device)
 
     def forward(self, src, src_mask):
         # src = [batch size, src len]
@@ -48,9 +48,9 @@ class Encoder(nn.Module):
         # pos = [batch size, src len]
 
         # src = self.dropout((self.tok_embedding(src) * self.scale) + self.pos_embedding(pos))
-        src = src * self.scale
-        src = self.pos_encoder(src)
-        src = self.dropout(src)
+        # src = src * self.scale
+        # src = self.pos_encoder(src)
+        # src = self.dropout(src)
         # src = [batch size, src len, hid dim]
 
         for layer in self.layers:
@@ -223,7 +223,7 @@ class Decoder(nn.Module):
 
         self.device = device
 
-        self.pos_encoder = PositionalEncoding(hid_dim, max_length)
+        # self.pos_encoder = PositionalEncoding(hid_dim, max_length)
 
         self.layers = nn.ModuleList([DecoderLayer(hid_dim, n_heads, pf_dim, dropout, device)
                                      for _ in range(n_layers)])
@@ -232,7 +232,7 @@ class Decoder(nn.Module):
 
         self.dropout = nn.Dropout(dropout)
 
-        self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(device)
+        # self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(device)
 
     def forward(self, trg, enc_src, trg_mask, src_mask):
         # trg = [batch size, trg len]
@@ -245,9 +245,9 @@ class Decoder(nn.Module):
 
         #pos = torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
         # pos = [batch size, trg len]
-        trg = trg * self.scale
-        trg = self.pos_encoder(trg)
-        trg = self.dropout(trg)
+        # trg = trg * self.scale
+        # trg = self.pos_encoder(trg)
+        # trg = self.dropout(trg)
 
         # trg = [batch size, trg len, hid dim]
 
@@ -412,7 +412,7 @@ class Seq2SeqTransformerRNN(nn.Module):
 
 
 class SentRegressor(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim, n_layers, device, encoder):#, encoder):
+    def __init__(self, input_dim, hidden_dim, output_dim, n_layers, device):
         super(SentRegressor, self).__init__()
 
         self.input_dim = input_dim
@@ -420,12 +420,11 @@ class SentRegressor(nn.Module):
         self.output_dim = output_dim
         self.n_layers = n_layers
         self.device = device
-        #self.encoder = encoder
-
+        # self.encoder = encoder
         self.fc = nn.Linear(300, self.output_dim)
         self.fc2 = nn.Linear(self.output_dim, 1)
-    def forward(self, enc_src): #encoded, src_mask):
-        #enc_src = self.encoder(encoded, src_mask)
+    def forward(self, enc_src):
+        # enc_src = self.encoder(encoded, src_mask)
         mean_embeds = torch.mean(enc_src, dim=1)
         mean_embeds = mean_embeds.to(self.device)
         fc_out = F.relu(self.fc(mean_embeds))
@@ -460,7 +459,6 @@ class Seq2SeqTransformer(nn.Module):
 
     def make_trg_mask(self, trg):
         # trg = [batch size, trg len]
-
         trg_pad = torch.zeros(trg.shape[0], trg.shape[1], self.trg_pad_dim, device=self.device)
 
         trg_pad_mask = torch.all(torch.eq(trg, trg_pad), axis=2).unsqueeze(1).unsqueeze(2)#.to(device=self.device)
@@ -477,7 +475,7 @@ class Seq2SeqTransformer(nn.Module):
         return trg_mask
 
 
-    def forward(self, src, trg):
+    def forward(self, src, trg, label):
         #src = [batch size, src len, dim]
         #trg = [batch size, trg len, dim]
 

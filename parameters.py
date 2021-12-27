@@ -33,11 +33,13 @@ param_mtt = {
     "enc_dropout": 0.31,
     "dec_dropout": 0.31,
 
-    "sent_hid_dim": 156,
+    "sent_hid_dim": 192,
     "sent_final_hid": 132,
     "sent_dropout": 0.31,
     "sent_n_layers": 2,
     "bidirect": True,
+
+    "transformer_regression": True,
 
     "n_epochs": 150,
     'lr_patience': 20,
