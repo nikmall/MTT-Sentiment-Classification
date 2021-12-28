@@ -39,7 +39,7 @@ param_mtt = {
     "sent_n_layers": 2,
     "bidirect": True,
 
-    "transformer_regression": True,
+    "transformer_regression": False,
 
     "n_epochs": 150,
     'lr_patience': 20,
@@ -47,7 +47,9 @@ param_mtt = {
     'loss_dec_cycle_weight': 0.1,
     'loss_regress_weight': 0.9,
 
-    'fuse_modalities': True
+    'fuse_modalities': True,
+    "cyclic": True
+
 }
 
 param_mtt_fuse = {
@@ -56,24 +58,27 @@ param_mtt_fuse = {
     "hid_dim": 300,# embedding dimension if glove300 is always 300
     "enc_layers": 3,
     "dec_layers": 3,
-    "enc_heads": 4,
-    "dec_heads": 3, # for divisions
-    "enc_pf_dim": 480,
-    "dec_pf_dim": 440,
+    "enc_heads": 6,
+    "dec_heads": 6,
+    "enc_pf_dim": 490,
+    "dec_pf_dim": 490,
     "enc_dropout": 0.31,
     "dec_dropout": 0.31,
 
     "sent_hid_dim": 192,
-    "sent_final_hid": 128,
-    "sent_dropout": 0.35,
+    "sent_final_hid": 132,
+    "sent_dropout": 0.31,
     "sent_n_layers": 2,
+    "bidirect": True,
+
+    "transformer_regression": False,
 
     "n_epochs": 150,
-    'lr_patience': 10,
-    'loss_dec_weight': 0.15,
+    'lr_patience': 20,
+    'loss_dec_weight': 0.1,
     'loss_dec_cycle_weight': 0.1,
     'loss_regress_weight': 0.9,
 
-    "fuse_modalities": True,
+    'fuse_modalities': True,
     "cyclic": True
 }

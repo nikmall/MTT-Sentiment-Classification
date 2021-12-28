@@ -119,13 +119,21 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=10):
         sample_ind, text, audio, vision = batch_X
 
         src = text.to(device=device)
+
         if params["fuse_modalities"]:
             fused_a_v = torch.cat((audio, vision), dim=2)
-            fused_a_v = pad_modality(fused_a_v, text.shape[2], fused_a_v.shape[2])
+            if params["cyclic"]:
+                fused_a_v = pad_modality(fused_a_v, text.shape[2], fused_a_v.shape[2])
+            else:
+                fused_a_v = pad_modality(fused_a_v, fused_a_v.shape[2] + 2, fused_a_v.shape[2]) # pad with 1 for divisions
             trg = fused_a_v
         else:
-            trg = pad_modality(audio, text.shape[2], audio.shape[2])
+            if params["cyclic"]:
+                trg = pad_modality(audio, text.shape[2], audio.shape[2])
+            else:
+                trg = pad_modality(audio, audio.shape[2] + 1, audio.shape[2]) # pad with 1 for divisions
         trg = trg.to(device=device)
+
         label = batch_Y
         label = label.squeeze().to(device=device)
 
@@ -171,10 +179,17 @@ def evaluate(model, valid_loader, criterion, params, device):
             src = text.to(device=device)
             if params["fuse_modalities"]:
                 fused_a_v = torch.cat((audio, vision), dim=2)
-                fused_a_v = pad_modality(fused_a_v, text.shape[2], fused_a_v.shape[2])
+                if params["cyclic"]:
+                    fused_a_v = pad_modality(fused_a_v, text.shape[2], fused_a_v.shape[2])
+                else:
+                    fused_a_v = pad_modality(fused_a_v, fused_a_v.shape[2] + 2,
+                                             fused_a_v.shape[2])  # pad with 1 for divisions
                 trg = fused_a_v
             else:
-                trg = pad_modality(audio, text.shape[2], audio.shape[2])
+                if params["cyclic"]:
+                    trg = pad_modality(audio, text.shape[2], audio.shape[2])
+                else:
+                    trg = pad_modality(audio, audio.shape[2] + 1, audio.shape[2])  # pad with 1 for divisions
             trg = trg.to(device=device)
             label = batch_Y
             label = label.squeeze().to(device=device)
