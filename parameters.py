@@ -39,7 +39,7 @@ param_mtt = {
     "sent_n_layers": 2,
     "bidirect": True,
 
-    "transformer_regression": False,
+    "transformer_regression": True,
 
     "n_epochs": 150,
     'lr_patience': 20,
