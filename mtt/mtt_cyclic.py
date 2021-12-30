@@ -30,6 +30,10 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
 
     dec = Decoder(DEC_EMB_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, MAX_LENGTH_DEC)
 
+    enc2 = Encoder(ENC_EMB_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, MAX_LENGTH_ENC)
+
+    dec2 = Decoder(DEC_EMB_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, MAX_LENGTH_DEC)
+
     SENT_HID_DIM = param_mtt['sent_hid_dim']
     SENT_FINAL_HID = param_mtt['sent_final_hid']
     SENT_N_LAYERS = param_mtt['sent_n_layers']
@@ -49,7 +53,7 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
     else:
         # LSTM
         regression = SentRegressorRNN(ENC_EMB_DIM, SENT_HID_DIM, SENT_FINAL_HID, SENT_N_LAYERS, SENT_DROPOUT, BIDIRECT)
-        model = Seq2SeqTransformerRNN(enc, dec, SRC_PAD_DIM, TRG_PAD_DIM, regression, device).to(device)
+        model = Seq2SeqTransformerRNN(enc, dec, enc2, dec2, SRC_PAD_DIM, TRG_PAD_DIM, regression, device).to(device)
 
     print(model)
 
@@ -129,25 +133,31 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=10):
             trg = fused_a_v
         else:
             if params["cyclic"]:
-                trg = pad_modality(audio, text.shape[2], audio.shape[2])
+                trg1 = pad_modality(audio, text.shape[2], audio.shape[2])
+                trg2 = pad_modality(vision, text.shape[2], vision.shape[2])
+
             else:
                 trg = pad_modality(audio, audio.shape[2] + 1, audio.shape[2]) # pad with 1 for divisions
-        trg = trg.to(device=device)
+
+        # trg = trg.to(device=device)
+        trg1 = trg1.to(device=device)
+        trg2 = trg2.to(device=device)
 
         label = batch_Y
         label = label.squeeze().to(device=device)
 
         optimizer.zero_grad()
 
-        decoded, cycled_decoded, regression_score = model(src, trg, label)
+        decoded, cycled_decoded, decoded_2, regression_score = model(src, trg1, trg2, label)
 
         criter_tran = criterion[0]
         criter_regr = criterion[1]
-        translate_loss = params['loss_dec_weight'] * criter_tran(decoded, trg)
+        translate_loss = params['loss_dec_weight'] * criter_tran(decoded, trg1)
         translate_cycle_loss = params['loss_dec_cycle_weight'] * criter_tran(cycled_decoded, src)
+        translate_loss_2 = params['loss_dec_weight'] * criter_tran(decoded_2, trg2)
         translate_sent_loss = params['loss_regress_weight'] * criter_regr(regression_score, label)
 
-        combined_loss = translate_loss + translate_cycle_loss + translate_sent_loss
+        combined_loss = translate_loss + translate_cycle_loss + translate_sent_loss + translate_loss_2
         combined_loss.backward()
 
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
@@ -177,6 +187,7 @@ def evaluate(model, valid_loader, criterion, params, device):
             sample_ind, text, audio, vision = batch_X
 
             src = text.to(device=device)
+
             if params["fuse_modalities"]:
                 fused_a_v = torch.cat((audio, vision), dim=2)
                 if params["cyclic"]:
@@ -187,22 +198,29 @@ def evaluate(model, valid_loader, criterion, params, device):
                 trg = fused_a_v
             else:
                 if params["cyclic"]:
-                    trg = pad_modality(audio, text.shape[2], audio.shape[2])
+                    trg1 = pad_modality(audio, text.shape[2], audio.shape[2])
+                    trg2 = pad_modality(vision, text.shape[2], vision.shape[2])
+
                 else:
                     trg = pad_modality(audio, audio.shape[2] + 1, audio.shape[2])  # pad with 1 for divisions
-            trg = trg.to(device=device)
+
+            # trg = trg.to(device=device)
+            trg1 = trg1.to(device=device)
+            trg2 = trg2.to(device=device)
+
             label = batch_Y
             label = label.squeeze().to(device=device)
 
-            decoded, cycled_decoded, regression_score = model(src, trg, label)
+            decoded, cycled_decoded, decoded_2, regression_score = model(src, trg1, trg2, label)
 
             criter_tran = criterion[0]
             criter_regr = criterion[1]
-            translate_loss = params['loss_dec_weight'] * criter_tran(decoded, trg)
+            translate_loss = params['loss_dec_weight'] * criter_tran(decoded, trg1)
             translate_cycle_loss = params['loss_dec_cycle_weight'] * criter_tran(cycled_decoded, src)
+            translate_loss_2 = params['loss_dec_weight'] * criter_tran(decoded_2, trg2)
             translate_sent_loss = params['loss_regress_weight'] * criter_regr(regression_score, label)
 
-            combined_loss = translate_loss + translate_cycle_loss + translate_sent_loss
+            combined_loss = translate_loss + translate_cycle_loss + translate_sent_loss + translate_loss_2
             epoch_loss += combined_loss.item()
 
             preds.append(regression_score)

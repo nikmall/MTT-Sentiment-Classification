@@ -330,7 +330,7 @@ class SentRegressorRNN(nn.Module):
 
 
 class Seq2SeqTransformerRNN(nn.Module):
-    def __init__(self, encoder, decoder, src_pad_dim, trg_pad_dim, regression, device):
+    def __init__(self, encoder, decoder, encoder2, decoder2, src_pad_dim, trg_pad_dim, regression, device):
         super().__init__()
 
         self.encoder = encoder
@@ -339,6 +339,8 @@ class Seq2SeqTransformerRNN(nn.Module):
         self.trg_pad_dim = trg_pad_dim
         self.device = device
         self.regression = regression
+        self.encoder_2 = encoder2
+        self.decoder_2 = decoder2
 
     # mask for pre-trained embedding inputs (3dim)
     def make_src_mask(self, src):
@@ -372,33 +374,41 @@ class Seq2SeqTransformerRNN(nn.Module):
         return trg_mask
 
 
-    def forward(self, src, trg, label):
+    def forward(self, src, trg1, trg2, label):
         #src = [batch size, src len, dim]
         #trg = [batch size, trg len, dim]
 
         src_mask = self.make_src_mask(src)
-        trg_mask = self.make_trg_mask(trg)
+        trg_mask = self.make_trg_mask(trg1)
         #src_mask = [batch size, 1, 1, src len]
         #trg_mask = [batch size, 1, trg len, trg len]
 
         enc_src = self.encoder(src, src_mask)
         #enc_src = [batch size, src len, hid dim]
 
-        output, attention = self.decoder(trg, enc_src, trg_mask, src_mask)
+        output, attention = self.decoder(trg1, enc_src, trg_mask, src_mask)
         #output = [batch size, trg len, output dim]
         #attention = [batch size, n heads, trg len, src len]
 
-        src_mask_2 = self.make_src_mask(output)
+        src_mask_1_2 = self.make_src_mask(output)
 
-        enc_src_2 = self.encoder(output, src_mask_2)
+        enc_src_1_2 = self.encoder(output, src_mask_1_2)
 
-        trg_mask_2 = self.make_trg_mask(enc_src_2)
+        trg_mask_1_2 = self.make_trg_mask(enc_src_1_2)
 
-        output_2, attention_2 = self.decoder(src, enc_src_2, trg_mask_2, src_mask)
+        output_2, attention_2 = self.decoder(src, enc_src_1_2, trg_mask_1_2, src_mask)
 
-        regression_score = self.regression(enc_src)
+        # IMAGE 2nd Cyclic sub-model
+        src_mask_2_1 = self.make_src_mask(output)
+        trg_mask_2_1 = self.make_trg_mask(trg2)
 
-        return output, output_2, regression_score
+        enc_src_2_1 = self.encoder_2(output_2, src_mask_2_1)
+
+        output_2_1, attention_2_1 = self.decoder_2(trg2, enc_src_2_1, trg_mask_2_1, src_mask_2_1)
+
+        regression_score = self.regression(enc_src_2_1)
+
+        return output, output_2, output_2_1, regression_score
 
 
 class SentRegressor(nn.Module):
