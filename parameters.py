@@ -28,23 +28,23 @@ param_mtt = {
     "dec_layers": 3,
     "enc_heads": 3,
     "dec_heads": 3,
-    "enc_pf_dim": 420,
-    "dec_pf_dim": 420,
-    "enc_dropout": 0.31,
-    "dec_dropout": 0.31,
+    "enc_pf_dim": 410,
+    "dec_pf_dim": 410,
+    "enc_dropout": 0.3,
+    "dec_dropout": 0.3,
 
     "enc_layers_2": 2,
     "dec_layers_2": 2,
     "enc_heads_2": 3,
-    "dec_heads_2": 3,
+    "dec_heads_2": 2,
     "enc_pf_dim_2": 300,
-    "dec_pf_dim_2": 180,
+    "dec_pf_dim_2": 100,
 
     "sent_hid_dim": 156, # 156
     "sent_final_hid": 116, # 132 best
     "sent_dropout": 0.25,
     "sent_n_layers": 2,
-    "bidirect": True,
+    "bidirect": False,
 
     "transformer_regression": False,
 
