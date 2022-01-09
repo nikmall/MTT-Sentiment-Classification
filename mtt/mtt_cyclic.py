@@ -23,16 +23,18 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
     ENC_DROPOUT = param_mtt['enc_dropout']
     DEC_DROPOUT = param_mtt['dec_dropout']
 
-    MAX_LENGTH_ENC = train_loader.dataset.text.shape[1]
+    DED_HID_DIM_2 = train_loader.dataset.vision.shape[2] + 1
+
+    MAX_LENGTH_ENC = 50
     MAX_LENGTH_DEC = 50
 
     enc = Encoder(ENC_EMB_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, MAX_LENGTH_ENC)
 
-    dec = Decoder(DEC_EMB_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, MAX_LENGTH_DEC)
+    dec = Decoder(DEC_EMB_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, MAX_LENGTH_DEC, ENC_EMB_DIM, ENC_EMB_DIM)
 
     enc2 = Encoder(ENC_EMB_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, MAX_LENGTH_ENC)
 
-    dec2 = Decoder(DEC_EMB_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, MAX_LENGTH_DEC)
+    dec2 = Decoder(DED_HID_DIM_2, DED_HID_DIM_2, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, MAX_LENGTH_DEC, ENC_EMB_DIM, ENC_EMB_DIM)
 
     SENT_HID_DIM = param_mtt['sent_hid_dim']
     SENT_FINAL_HID = param_mtt['sent_final_hid']
@@ -134,10 +136,10 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=10):
         else:
             if params["cyclic"]:
                 trg1 = pad_modality(audio, text.shape[2], audio.shape[2])
-                trg2 = pad_modality(vision, text.shape[2], vision.shape[2])
-
             else:
-                trg = pad_modality(audio, audio.shape[2] + 1, audio.shape[2]) # pad with 1 for divisions
+                trg1 = pad_modality(audio, audio.shape[2] + 1, audio.shape[2]) # pad with 1 for divisions
+
+            trg2 = pad_modality(vision, vision.shape[2] + 1, vision.shape[2])
 
         # trg = trg.to(device=device)
         trg1 = trg1.to(device=device)
@@ -199,10 +201,10 @@ def evaluate(model, valid_loader, criterion, params, device):
             else:
                 if params["cyclic"]:
                     trg1 = pad_modality(audio, text.shape[2], audio.shape[2])
-                    trg2 = pad_modality(vision, text.shape[2], vision.shape[2])
-
                 else:
-                    trg = pad_modality(audio, audio.shape[2] + 1, audio.shape[2])  # pad with 1 for divisions
+                    trg1 = pad_modality(audio, audio.shape[2] + 1, audio.shape[2])  # pad with 1 for divisions
+
+                trg2 = pad_modality(vision, vision.shape[2] + 1, vision.shape[2])
 
             # trg = trg.to(device=device)
             trg1 = trg1.to(device=device)
