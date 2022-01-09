@@ -32,9 +32,11 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
 
     dec = Decoder(DEC_EMB_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, MAX_LENGTH_DEC, ENC_EMB_DIM, ENC_EMB_DIM)
 
-    enc2 = Encoder(ENC_EMB_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, MAX_LENGTH_ENC)
+    enc2 = Encoder(param_mtt['enc_emb_dim'], param_mtt['hid_dim'], param_mtt['enc_layers_2'], param_mtt['enc_heads_2'],
+                   param_mtt['enc_pf_dim_2'], ENC_DROPOUT, device, MAX_LENGTH_ENC)
 
-    dec2 = Decoder(DED_HID_DIM_2, DED_HID_DIM_2, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device, MAX_LENGTH_DEC, ENC_EMB_DIM, ENC_EMB_DIM)
+    dec2 = Decoder(DED_HID_DIM_2, DED_HID_DIM_2,  param_mtt['dec_layers_2'], param_mtt['dec_heads_2'],
+                   param_mtt['dec_pf_dim_2'], DEC_DROPOUT, device, MAX_LENGTH_DEC, ENC_EMB_DIM, ENC_EMB_DIM)
 
     SENT_HID_DIM = param_mtt['sent_hid_dim']
     SENT_FINAL_HID = param_mtt['sent_final_hid']
