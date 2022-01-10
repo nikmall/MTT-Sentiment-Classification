@@ -36,7 +36,7 @@ param_mtt = {
     "enc_layers_2": 2,
     "dec_layers_2": 2,
     "enc_heads_2": 3,
-    "dec_heads_2": 2,
+    "dec_heads_2": 3,
     "enc_pf_dim_2": 300,
     "dec_pf_dim_2": 100,
 
