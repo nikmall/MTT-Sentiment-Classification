@@ -72,7 +72,7 @@ param_mtt_fuse = {
     "enc_dropout": 0.31,
     "dec_dropout": 0.31,
 
-    "sent_hid_dim": 192,
+    "sent_hid_dim": 156,
     "sent_final_hid": 132,
     "sent_dropout": 0.31,
     "sent_n_layers": 2,

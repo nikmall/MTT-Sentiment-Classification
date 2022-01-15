@@ -1,20 +1,36 @@
+from torch import Tensor
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
+import math
+
+class PositionalEncoding(nn.Module):
+    def __init__(self, d_model: int, max_len: int ):
+        super().__init__()
+
+        position = torch.arange(max_len).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
+        pe = torch.zeros(1, max_len, d_model)
+        pe[0, :, 0::2] = torch.sin(position * div_term)
+        pe[0, :, 1::2] = torch.cos(position * div_term)
+        self.register_buffer('pe', pe)
+
+    def forward(self, x: Tensor) -> Tensor:
+        """
+        Args:
+            x: Tensor, shape [seq_len, batch_size, embedding_dim]
+        """
+        x = x + self.pe[:x.size(0)]
+        return x
 
 class Encoder(nn.Module):
     def __init__(self, input_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length):
         super().__init__()
 
         self.device = device
-
-        # self.tok_embedding = nn.Embedding(input_dim, hid_dim)
-        self.pos_embedding = nn.Embedding(max_length, input_dim)  # (max_length, hid_dim)
-
+        self.pos_encoder = PositionalEncoding(hid_dim, max_length)
         self.layers = nn.ModuleList([EncoderLayer(hid_dim, n_heads, pf_dim, dropout, device) for _ in range(n_layers)])
-
         self.dropout = nn.Dropout(dropout)
-
         self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(device)
 
     def forward(self, src, src_mask):
@@ -23,14 +39,12 @@ class Encoder(nn.Module):
 
         batch_size = src.shape[0]
         src_len = src.shape[1]
-
-        pos = torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
-
+        # pos = torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
         # pos = [batch size, src len]
 
-        # src = self.dropout((self.tok_embedding(src) * self.scale) + self.pos_embedding(pos))
-        src = self.dropout((src * self.scale) + self.pos_embedding(pos))
-
+        src = src * self.scale
+        src = self.pos_encoder(src)
+        src = self.dropout(src)
         # src = [batch size, src len, hid dim]
 
         for layer in self.layers:
@@ -47,10 +61,8 @@ class EncoderLayer(nn.Module):
 
         self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
         self.self_attn_layer_norm = nn.LayerNorm(hid_dim)
-
         self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
         self.ff_layer_norm = nn.LayerNorm(hid_dim)
-
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, src, src_mask):
@@ -70,7 +82,6 @@ class EncoderLayer(nn.Module):
 
         # dropout, residual and layer norm
         src = self.ff_layer_norm(src + self.dropout(_src))
-
         # src = [batch size, src len, hid dim]
 
         return src
@@ -144,7 +155,7 @@ class MultiHeadAttentionLayer(nn.Module):
 
 
 class PositionwiseFeedforwardLayer(nn.Module):
-    def __init__(self, hid_dim, pf_dim, dropout):
+    def __init__(self, hid_dim, pf_dim, dropout, out_hid_dim=''):
         super().__init__()
 
         self.fc_1 = nn.Linear(hid_dim, pf_dim)
@@ -202,8 +213,8 @@ class Decoder(nn.Module):
         super().__init__()
 
         self.device = device
-        # self.tok_embedding = nn.Embedding(output_dim, hid_dim)
-        self.pos_embedding = nn.Embedding(max_length, hid_dim)
+
+        self.pos_encoder = PositionalEncoding(hid_dim, max_length)
 
         self.layers = nn.ModuleList([DecoderLayer(hid_dim, n_heads, pf_dim, dropout, device, kdim, vdim)
                                      for _ in range(n_layers)])
@@ -223,11 +234,11 @@ class Decoder(nn.Module):
         batch_size = trg.shape[0]
         trg_len = trg.shape[1]
 
-        pos = torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
-
         # pos = [batch size, trg len]
+        trg = trg * self.scale
+        trg = self.pos_encoder(trg)
+        trg = self.dropout(trg)
 
-        trg = self.dropout(trg + self.pos_embedding(pos))
         # trg = [batch size, trg len, hid dim]
 
         for layer in self.layers:
@@ -252,8 +263,6 @@ class DecoderLayer(nn.Module):
         self.ff_layer_norm = nn.LayerNorm(hid_dim)
 
         self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
-
-        # self.encoder_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
         self.encoder_attention = nn.MultiheadAttention(hid_dim, n_heads, dropout, kdim =kdim,
                                                        vdim = vdim, batch_first =True)
         self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
@@ -290,37 +299,37 @@ class DecoderLayer(nn.Module):
         return trg, attention
 
 
-class SentRegressor(nn.Module):
+class SentRegressorRNN(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim, n_layers, dropout, bidirect=False):
-        super().__init__()
+        super(SentRegressorRNN, self).__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
         self.n_layers = n_layers
+        self.bidirect = bidirect
 
-        self.lstm = nn.LSTM(self.input_dim, self.hidden_dim, bidirectional=bidirect, dropout=dropout,
+        self.lstm = nn.LSTM(input_size=self.input_dim,hidden_size= self.hidden_dim, bidirectional=self.bidirect, dropout=dropout,
                             num_layers=self.n_layers, batch_first=True)
-        if bidirect:
-            self.fc = nn.Linear(self.hidden_dim * self.n_layers * 2, self.output_dim)
+        if self.bidirect:
+            self.fc = nn.Linear(self.hidden_dim * 2, self.output_dim)
         else:
-            self.fc = nn.Linear(self.hidden_dim * self.n_layers, self.output_dim)
+            self.fc = nn.Linear(self.hidden_dim, self.output_dim)
         self.fc2 = nn.Linear(self.output_dim, 1)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, encoded):
         output, (hidden, cell) = self.lstm(encoded)
-        if self.n_layers == 2:
-            hidden = self.dropout(torch.cat((hidden[-2, :, :], hidden[-1, :, :]), dim=1))
+        if self.bidirect:
+            hidden_out = self.dropout(torch.cat((hidden[-2, :, :], hidden[-1, :, :]), dim=1))
         else:
-            hidden = hidden.squeeze()
-            hidden = self.dropout(hidden)
-        fc_out = F.relu(self.fc(hidden))
+            hidden_out = self.dropout(hidden[-1, :, :])
+        fc_out = F.relu(self.fc(hidden_out))
         final_out = self.fc2(fc_out)
 
         return final_out.squeeze()
 
 
-class Seq2SeqTransformer(nn.Module):
+class Seq2SeqTransformerRNN(nn.Module):
     def __init__(self, encoder, decoder, src_pad_dim, trg_pad_dim, regression, device):
         super().__init__()
 
@@ -347,7 +356,7 @@ class Seq2SeqTransformer(nn.Module):
     def make_trg_mask(self, trg):
         # trg = [batch size, trg len]
 
-        trg_pad = torch.zeros(trg.shape[0], trg.shape[1], self.trg_pad_dim, device=self.device)
+        trg_pad = torch.zeros(trg.shape[0], trg.shape[1], trg.shape[2], device=self.device)
 
         trg_pad_mask = torch.all(torch.eq(trg, trg_pad), axis=2).unsqueeze(1).unsqueeze(2)#.to(device=self.device)
         # trg_pad_mask = [batch size, 1, 1, trg len]
@@ -362,32 +371,67 @@ class Seq2SeqTransformer(nn.Module):
 
         return trg_mask
 
-    def forward(self, src, trg, label):
+
+    def forward(self, src, trg1, label):
+        #src = [batch size, src len, dim]
+        #trg = [batch size, trg len, dim]
+
         src_mask = self.make_src_mask(src)
-        trg_mask = self.make_trg_mask(trg)
+        trg_mask = self.make_trg_mask(trg1)
+        #src_mask = [batch size, 1, 1, src len]
+        #trg_mask = [batch size, 1, trg len, trg len]
 
         enc_src = self.encoder(src, src_mask)
         #enc_src = [batch size, src len, hid dim]
 
-        output, attention = self.decoder(trg, enc_src, trg_mask, src_mask)
+        output, attention = self.decoder(trg1, enc_src, trg_mask, src_mask)
+        #output = [batch size, trg len, output dim]
+        #attention = [batch size, n heads, trg len, src len]
 
-        regression_score = self.regression(enc_src)
+        src_mask_1_2 = self.make_src_mask(output)
 
-        return output, regression_score
+        enc_src_1_2 = self.encoder(output, src_mask_1_2)
+
+        trg_mask_1_2 = self.make_trg_mask(enc_src_1_2)
+
+        output_2, attention_2 = self.decoder(src, enc_src_1_2, trg_mask_1_2, src_mask)
+
+        regression_score = self.regression(enc_src_1_2)
+
+        return output, output_2, regression_score
 
 
-class Seq2SeqTransformerConcat(nn.Module):
-    def __init__(self, encoder_text, decoder_audio, encoder_audio, decoder_text, src_pad_dim, trg_pad_dim, regression, device):
+class SentRegressor(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim, n_layers, device):
+        super(SentRegressor, self).__init__()
+
+        self.input_dim = input_dim
+        self.hidden_dim = hidden_dim
+        self.output_dim = output_dim
+        self.n_layers = n_layers
+        self.device = device
+        # self.encoder = encoder
+        self.fc = nn.Linear(300, self.output_dim)
+        self.fc2 = nn.Linear(self.output_dim, 1)
+    def forward(self, enc_src):
+        # enc_src = self.encoder(encoded, src_mask)
+        mean_embeds = torch.mean(enc_src, dim=1)
+        mean_embeds = mean_embeds.to(self.device)
+        fc_out = F.relu(self.fc(mean_embeds))
+        final_out = self.fc2(fc_out)
+        return final_out.squeeze()
+
+
+class Seq2SeqTransformer(nn.Module):
+    def __init__(self, encoder, decoder, src_pad_dim, trg_pad_dim, regression, encoder_2, device):
         super().__init__()
 
-        self.encoder_text = encoder_text
-        self.decoder_audio = decoder_audio
-        self.encoder_audio = encoder_audio
-        self.decoder_text = decoder_text
-
+        self.encoder = encoder
+        self.decoder = decoder
         self.src_pad_dim = src_pad_dim
         self.trg_pad_dim = trg_pad_dim
         self.device = device
+        self.encoder_2 = encoder_2
         self.regression = regression
 
     # mask for pre-trained embedding inputs (3dim)
@@ -405,7 +449,6 @@ class Seq2SeqTransformerConcat(nn.Module):
 
     def make_trg_mask(self, trg):
         # trg = [batch size, trg len]
-
         trg_pad = torch.zeros(trg.shape[0], trg.shape[1], self.trg_pad_dim, device=self.device)
 
         trg_pad_mask = torch.all(torch.eq(trg, trg_pad), axis=2).unsqueeze(1).unsqueeze(2)#.to(device=self.device)
@@ -422,32 +465,33 @@ class Seq2SeqTransformerConcat(nn.Module):
         return trg_mask
 
 
-    def forward(self, text, audio, label):
+    def forward(self, src, trg, label):
         #src = [batch size, src len, dim]
         #trg = [batch size, trg len, dim]
 
-        src_mask_text = self.make_src_mask(text)
-        trg_mask_audio = self.make_trg_mask(audio)
-
-        src_mask_audio = self.make_src_mask(audio)
-        trg_mask_text = self.make_trg_mask(text)
-
+        src_mask = self.make_src_mask(src)
+        trg_mask = self.make_trg_mask(trg)
         #src_mask = [batch size, 1, 1, src len]
         #trg_mask = [batch size, 1, trg len, trg len]
-        enc_text = self.encoder_text(text, src_mask_text)
+
+        enc_src = self.encoder(src, src_mask)
         #enc_src = [batch size, src len, hid dim]
 
-        output_audio, attention_audio = self.decoder_audio(audio, enc_text, trg_mask_audio, src_mask_text)
+        output, attention = self.decoder(trg, enc_src, trg_mask, src_mask)
         #output = [batch size, trg len, output dim]
         #attention = [batch size, n heads, trg len, src len]
 
+        src_mask_2 = self.make_src_mask(output)
 
-        enc_audio = self.encoder_audio(audio, src_mask_audio)
+        enc_src_2 = self.encoder(output, src_mask_2)
 
-        output_text, attention_text = self.decoder_audio(text, enc_audio, trg_mask_text, src_mask_audio)
+        trg_mask_2 = self.make_trg_mask(enc_src_2)
 
-        combined_emb = torch.cat((enc_text, enc_audio), 2)
-        regression_score = self.regression(combined_emb)
+        output_2, attention_2 = self.decoder(src, enc_src_2, trg_mask_2, src_mask)
+
+        # regression_score = self.regression(enc_src)
+        enc_regress = self.encoder_2(enc_src, self.make_src_mask(enc_src))
+        regression_score = self.regression(enc_regress)
 
 
-        return output_audio, output_text, regression_score
+        return output, output_2, regression_score
