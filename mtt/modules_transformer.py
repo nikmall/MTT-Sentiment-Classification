@@ -263,7 +263,7 @@ class DecoderLayer(nn.Module):
         self.ff_layer_norm = nn.LayerNorm(hid_dim)
 
         self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
-        self.encoder_attention = nn.MultiheadAttention(hid_dim, n_heads, dropout, kdim =kdim,
+        self.encoder_attention = nn.MultiheadAttention(embed_dim=hid_dim,num_heads= n_heads, kdim =kdim,
                                                        vdim = vdim, batch_first =True)
         self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
         self.dropout = nn.Dropout(dropout)
@@ -497,7 +497,7 @@ class Seq2SeqTransformer(nn.Module):
 
         trg_mask_2 = self.make_trg_mask(enc_src_2)
 
-        output_2, attention_2 = self.decoder(src, enc_src_2, trg_mask_2, src_mask)
+        output_2, attention_2 = self.decoder(src, enc_src_2, trg_mask_2, src_mask_2)
 
         # regression_score = self.regression(enc_src)
         enc_regress = self.encoder_2(enc_src, self.make_src_mask(enc_src))
