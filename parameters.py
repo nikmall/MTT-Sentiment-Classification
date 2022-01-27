@@ -69,12 +69,12 @@ param_mtt_fuse = {
     "dec_heads": 6,
     "enc_pf_dim": 480,
     "dec_pf_dim": 480,
-    "enc_dropout": 0.33,
-    "dec_dropout": 0.33,
+    "enc_dropout": 0.4,
+    "dec_dropout": 0.4,
 
     "sent_hid_dim": 156,
     "sent_final_hid": 112,
-    "sent_dropout": 0.31,
+    "sent_dropout": 0.32,
     "sent_n_layers": 2,
     "bidirect": True,
 
@@ -82,8 +82,8 @@ param_mtt_fuse = {
 
     "n_epochs": 150,
     'lr_patience': 20,
-    'loss_dec_weight': 0.16,
-    'loss_dec_cycle_weight': 0.1,
+    'loss_dec_weight': 0.18,
+    'loss_dec_cycle_weight': 0.12,
     'loss_regress_weight': 0.9,
 
     'fuse_modalities': True,
