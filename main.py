@@ -44,7 +44,7 @@ def main():
 
     print(f'Processing dataset {dataset} for training on {model_type} model type')
 
-    train_loader, valid_loader, test_loader = get_dataloaders(dataset)
+    train_loader, valid_loader, test_loader = get_dataloaders(dataset, False)
     print("Loaded the Dataloaders")
 
 
