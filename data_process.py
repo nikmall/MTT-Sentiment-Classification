@@ -1,5 +1,5 @@
-from builtins import type
-
+import random
+import numpy as np
 import torch
 import os
 from dataset import Multimodal_Datasets
@@ -8,6 +8,10 @@ from parameters import param
 
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
+def seed_worker(worker_id):
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
 
 def get_data(dataset, split='train'):
     alignment = 'a' if param["aligned"] else 'na'
@@ -23,7 +27,10 @@ def get_data(dataset, split='train'):
     return data
 
 
-def get_dataloaders(dataset, scale=True):
+def get_dataloaders(dataset, seed_custom, scale=True):
+    g = torch.Generator()
+    g.manual_seed(seed_custom)
+
     train_data = get_data(dataset, 'train')
     valid_data = get_data(dataset, 'valid')
     test_data = get_data(dataset, 'test')
@@ -31,9 +38,12 @@ def get_dataloaders(dataset, scale=True):
     if scale:
         scale_data(train_data, valid_data, test_data)
 
-    train_loader = DataLoader(train_data, batch_size=param["batch_size"], shuffle=True)
-    valid_loader = DataLoader(valid_data, batch_size=param["batch_size"], shuffle=True)
-    test_loader = DataLoader(test_data, batch_size=param["batch_size"], shuffle=True)
+    train_loader = DataLoader(train_data, batch_size=param["batch_size"], shuffle=True, worker_init_fn=seed_worker,
+                              generator=g)
+    valid_loader = DataLoader(valid_data, batch_size=param["batch_size"], shuffle=True, worker_init_fn=seed_worker,
+                              generator=g)
+    test_loader = DataLoader(test_data, batch_size=param["batch_size"], shuffle=True, worker_init_fn=seed_worker,
+                             generator=g)
 
     return train_loader, valid_loader, test_loader
 

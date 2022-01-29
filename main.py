@@ -1,5 +1,7 @@
 import argparse
 import torch
+import random
+import numpy as np
 
 from data_process import get_dataloaders
 from parameters import param_mctn, param_mtt, param_mtt_fuse
@@ -8,12 +10,12 @@ from mtt.mtt_cyclic import start_mtt_cyclic
 from mtt_fuse.mtt_fuse import start_mtt_fuse
 
 seed = 11
+torch.cuda.manual_seed(seed)
+random.seed(seed)
+np.random.seed(0)
 device = torch.device("cpu")
-# torch.set_default_tensor_type('torch.FloatTensor')
 if torch.cuda.is_available():
     print("using cuda")
-    # torch.cuda.manual_seed(seed)
-    # torch.set_default_tensor_type('torch.cuda.FloatTensor')
     device = torch.device("cuda")
 
 torch.backends.cudnn.enabled = False
@@ -44,7 +46,7 @@ def main():
 
     print(f'Processing dataset {dataset} for training on {model_type} model type')
 
-    train_loader, valid_loader, test_loader = get_dataloaders(dataset, False)
+    train_loader, valid_loader, test_loader = get_dataloaders(dataset, seed, True)
     print("Loaded the Dataloaders")
 
 
