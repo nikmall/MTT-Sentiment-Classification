@@ -12,7 +12,7 @@ from mtt_fuse.mtt_fuse import start_mtt_fuse
 seed = 164
 torch.cuda.manual_seed(seed)
 random.seed(seed)
-np.random.seed(0)
+np.random.seed(seed)
 
 if torch.cuda.is_available():
     print("using cuda")

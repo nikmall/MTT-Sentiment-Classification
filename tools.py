@@ -22,7 +22,7 @@ def epoch_time(start_time, end_time):
     return elapsed_mins, elapsed_secs
 
 
-def init_weights(m, rand=False):
+def init_weights(m, rand=True):
     if rand:
         for name, param in m.named_parameters():
             if 'weight' in name:
