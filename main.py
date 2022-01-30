@@ -9,15 +9,16 @@ from mctn_rnn.mctn import start_mctn
 from mtt.mtt_cyclic import start_mtt_cyclic
 from mtt_fuse.mtt_fuse import start_mtt_fuse
 
-seed = 6
+seed = 164
 torch.cuda.manual_seed(seed)
 random.seed(seed)
 np.random.seed(0)
 
-device = torch.device("cpu")
 if torch.cuda.is_available():
     print("using cuda")
     device = torch.device("cuda")
+else:
+    device = torch.device("cpu")
 
 
 def main():
