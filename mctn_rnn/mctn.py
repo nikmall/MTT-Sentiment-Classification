@@ -69,11 +69,9 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
     # finally for test
     model.load_state_dict(torch.load('mctn_rnn.pt', map_location=device))
 
-
     test_loss, pred_test, labels_test = evaluate(model, test_loader, criterion, device)
 
     mosei_scores(pred_test, labels_test, message='Final Test Scores')
-
     print(f'Test Loss: {test_loss:.4f} ')
 
 
@@ -94,9 +92,7 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=1):
         trg = audio.permute(1, 0, 2)
         label = batch_Y.permute(1, 0, 2)
         label = label.squeeze(0).to(device=device)
-        # trg = [trg len, batch size, emb dim]
-        # output = [trg len, batch size, emb dim]
-        # label = [1, batch size, 1]
+
 
         optimizer.zero_grad()
 
@@ -141,9 +137,6 @@ def evaluate(model, valid_loader, criterion, params, device):
             trg = audio.permute(1, 0, 2)
             label = batch_Y.permute(1, 0, 2)
             label = label.squeeze(0).to(device=device)
-            # trg = [trg len, batch size, emb dim]
-            # output = [trg len, batch size, emb dim]
-            # label = [1, batch size, 1]
 
             decoded, cycled_decoded, regression_score = model(src, trg, label)
 

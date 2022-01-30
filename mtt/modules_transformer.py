@@ -34,23 +34,13 @@ class Encoder(nn.Module):
         self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(device)
 
     def forward(self, src, src_mask):
-        # src = [batch size, src len]
-        # src_mask = [batch size, 1, 1, src len]
-
-        batch_size = src.shape[0]
-        src_len = src.shape[1]
-        # pos = torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
-        # pos = [batch size, src len]
 
         src = src * self.scale
         src = self.pos_encoder(src)
         src = self.dropout(src)
-        # src = [batch size, src len, hid dim]
 
         for layer in self.layers:
             src = layer(src, src_mask)
-
-        # src = [batch size, src len, hid dim]
 
         return src
 
@@ -66,8 +56,6 @@ class EncoderLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, src, src_mask):
-        # src = [batch size, src len, hid dim]
-        # src_mask = [batch size, 1, 1, src len]
 
         # self attention
         _src, _ = self.self_attention(src, src, src, src_mask)
@@ -75,14 +63,11 @@ class EncoderLayer(nn.Module):
         # dropout, residual connection and layer norm
         src = self.self_attn_layer_norm(src + self.dropout(_src))
 
-        # src = [batch size, src len, hid dim]
-
         # positionwise feedforward
         _src = self.positionwise_feedforward(src)
 
         # dropout, residual and layer norm
         src = self.ff_layer_norm(src + self.dropout(_src))
-        # src = [batch size, src len, hid dim]
 
         return src
 
@@ -110,46 +95,29 @@ class MultiHeadAttentionLayer(nn.Module):
     def forward(self, query, key, value, mask=None):
         batch_size = query.shape[0]
 
-        # query = [batch size, query len, hid dim]
-        # key = [batch size, key len, hid dim]
-        # value = [batch size, value len, hid dim]
 
         Q = self.fc_q(query)
         K = self.fc_k(key)
         V = self.fc_v(value)
-        # Q = [batch size, query len, hid dim]
-        # K = [batch size, key len, hid dim]
-        # V = [batch size, value len, hid dim]
 
         Q = Q.view(batch_size, -1, self.n_heads, self.head_dim).permute(0, 2, 1, 3)
         K = K.view(batch_size, -1, self.n_heads, self.head_dim).permute(0, 2, 1, 3)
         V = V.view(batch_size, -1, self.n_heads, self.head_dim).permute(0, 2, 1, 3)
 
-        # Q = [batch size, n heads, query len, head dim]
-        # K = [batch size, n heads, key len, head dim]
-        # V = [batch size, n heads, value len, head dim]
-
         energy = torch.matmul(Q, K.permute(0, 1, 3, 2)) / self.scale
-
-        # energy = [batch size, n heads, query len, key len]
 
         if mask is not None:
             energy = energy.masked_fill(mask == 0, -1e10)
 
         attention = torch.softmax(energy, dim=-1)
-        # attention = [batch size, n heads, query len, key len]
 
         x = torch.matmul(self.dropout(attention), V)
-        # x = [batch size, n heads, query len, head dim]
 
         x = x.permute(0, 2, 1, 3).contiguous()
-        # x = [batch size, query len, n heads, head dim]
 
         x = x.view(batch_size, -1, self.hid_dim)
-        # x = [batch size, query len + n_heads(ss ??), hid dim]
 
         x = self.fc_o(x)
-        # x = [batch size, query len, hid dim]
 
         return x, attention
 
@@ -164,13 +132,10 @@ class PositionwiseFeedforwardLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        # x = [batch size, seq len, hid dim]
 
         x = self.dropout(torch.relu(self.fc_1(x)))
-        # x = [batch size, seq len, pf dim]
 
         x = self.fc_2(x)
-        # x = [batch size, seq len, hid dim]
 
         return x
 
@@ -183,8 +148,6 @@ class Attention(nn.Module):
         self.v = nn.Linear(dec_hid_dim, 1, bias=False)
 
     def forward(self, hidden, encoder_outputs):
-        # hidden = [batch size, dec hid dim]
-        # encoder_outputs = [src len, batch size, enc hid dim * 2]
 
         batch_size = encoder_outputs.shape[1]
         src_len = encoder_outputs.shape[0]
@@ -194,16 +157,9 @@ class Attention(nn.Module):
 
         encoder_outputs = encoder_outputs.permute(1, 0, 2)
 
-        # hidden = [batch size, src len, dec hid dim]
-        # encoder_outputs = [batch size, src len, enc hid dim * 2]
-
         energy = torch.tanh(self.attn(torch.cat((hidden, encoder_outputs), dim=2)))
 
-        # energy = [batch size, src len, dec hid dim]
-
         attention = self.v(energy).squeeze(2)
-
-        # attention= [batch size, src len]
 
         return F.softmax(attention, dim=1)
 
@@ -226,30 +182,19 @@ class Decoder(nn.Module):
         self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(device)
 
     def forward(self, trg, enc_src, trg_mask, src_mask):
-        # trg = [batch size, trg len]
-        # enc_src = [batch size, src len, hid dim]
-        # trg_mask = [batch size, 1, trg len, trg len]
-        # src_mask = [batch size, 1, 1, src len]
+
 
         batch_size = trg.shape[0]
         trg_len = trg.shape[1]
 
-        # pos = [batch size, trg len]
         trg = trg * self.scale
         trg = self.pos_encoder(trg)
         trg = self.dropout(trg)
 
-        # trg = [batch size, trg len, hid dim]
-
         for layer in self.layers:
             trg, attention = layer(trg, enc_src, trg_mask, src_mask)
 
-        # trg = [batch size, trg len, hid dim]
-        # attention = [batch size, n heads, trg len, src len]
-
         output = self.fc_out(trg)
-
-        # output = [batch size, trg len, output dim]
 
         return output, attention
 
@@ -269,32 +214,18 @@ class DecoderLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, trg, enc_src, trg_mask, src_mask):
-        # trg = [batch size, trg len, hid dim]
-        # enc_src = [batch size, src len, hid dim]
-        # trg_mask = [batch size, 1, trg len, trg len]
-        # src_mask = [batch size, 1, 1, src len]
 
-        # self attention
         _trg, _ = self.self_attention(trg, trg, trg, trg_mask)
 
-        # dropout, residual connection and layer norm
         trg = self.self_attn_layer_norm(trg + self.dropout(_trg))
-        # trg = [batch size, trg len, hid dim]
 
-        # encoder attention
         _trg, attention = self.encoder_attention(trg, enc_src, enc_src, key_padding_mask =src_mask.squeeze())
 
-        # dropout, residual connection and layer norm
         trg = self.enc_attn_layer_norm(trg + self.dropout(_trg))
-        # trg = [batch size, trg len, hid dim]
 
-        # position-wise feedforward
         _trg = self.positionwise_feedforward(trg)
 
-        # dropout, residual and layer norm
         trg = self.ff_layer_norm(trg + self.dropout(_trg))
-        #trg = [batch size, trg len, hid dim]
-        #attention = [batch size, n heads, trg len, src len]
 
         return trg, attention
 
@@ -344,51 +275,38 @@ class Seq2SeqTransformerRNN(nn.Module):
 
     # mask for pre-trained embedding inputs (3dim)
     def make_src_mask(self, src):
-        # src = [batch size, src len, dim]
 
         src_pad = torch.zeros(src.shape[0], src.shape[1], self.src_pad_dim, device=self.device)
 
         src_mask = torch.all(torch.eq(src, src_pad), axis=2)#.to(device=self.device)
 
         src_mask = src_mask.unsqueeze(1).unsqueeze(2)
-        # src_mask = [batch size, 1, 1, src len]
 
         return src_mask
 
     def make_trg_mask(self, trg):
-        # trg = [batch size, trg len]
 
         trg_pad = torch.zeros(trg.shape[0], trg.shape[1], trg.shape[2], device=self.device)
 
         trg_pad_mask = torch.all(torch.eq(trg, trg_pad), axis=2).unsqueeze(1).unsqueeze(2)#.to(device=self.device)
-        # trg_pad_mask = [batch size, 1, 1, trg len]
 
         trg_len = trg.shape[1]
 
         trg_sub_mask = torch.tril(torch.ones((trg_len, trg_len), device=self.device)).bool()
-        # trg_sub_mask = [trg len, trg len]
 
         trg_mask = trg_pad_mask & trg_sub_mask
-        # trg_mask = [batch size, 1, trg len, trg len]
 
         return trg_mask
 
 
     def forward(self, src, trg1, trg2, label):
-        #src = [batch size, src len, dim]
-        #trg = [batch size, trg len, dim]
 
         src_mask = self.make_src_mask(src)
         trg_mask = self.make_trg_mask(trg1)
-        #src_mask = [batch size, 1, 1, src len]
-        #trg_mask = [batch size, 1, trg len, trg len]
 
         enc_src = self.encoder(src, src_mask)
-        #enc_src = [batch size, src len, hid dim]
 
         output, attention = self.decoder(trg1, enc_src, trg_mask, src_mask)
-        #output = [batch size, trg len, output dim]
-        #attention = [batch size, n heads, trg len, src len]
 
         src_mask_1_2 = self.make_src_mask(output)
 
@@ -420,11 +338,9 @@ class SentRegressor(nn.Module):
         self.output_dim = output_dim
         self.n_layers = n_layers
         self.device = device
-        # self.encoder = encoder
         self.fc = nn.Linear(300, self.output_dim)
         self.fc2 = nn.Linear(self.output_dim, 1)
     def forward(self, enc_src):
-        # enc_src = self.encoder(encoded, src_mask)
         mean_embeds = torch.mean(enc_src, dim=1)
         mean_embeds = mean_embeds.to(self.device)
         fc_out = F.relu(self.fc(mean_embeds))
@@ -446,50 +362,36 @@ class Seq2SeqTransformer(nn.Module):
 
     # mask for pre-trained embedding inputs (3dim)
     def make_src_mask(self, src):
-        # src = [batch size, src len, dim]
-
         src_pad = torch.zeros(src.shape[0], src.shape[1], self.src_pad_dim, device=self.device)
 
         src_mask = torch.all(torch.eq(src, src_pad), axis=2)#.to(device=self.device)
 
         src_mask = src_mask.unsqueeze(1).unsqueeze(2)
-        # src_mask = [batch size, 1, 1, src len]
 
         return src_mask
 
     def make_trg_mask(self, trg):
-        # trg = [batch size, trg len]
         trg_pad = torch.zeros(trg.shape[0], trg.shape[1], self.trg_pad_dim, device=self.device)
 
         trg_pad_mask = torch.all(torch.eq(trg, trg_pad), axis=2).unsqueeze(1).unsqueeze(2)#.to(device=self.device)
-        # trg_pad_mask = [batch size, 1, 1, trg len]
 
         trg_len = trg.shape[1]
 
         trg_sub_mask = torch.tril(torch.ones((trg_len, trg_len), device=self.device)).bool()
-        # trg_sub_mask = [trg len, trg len]
 
         trg_mask = trg_pad_mask & trg_sub_mask
-        # trg_mask = [batch size, 1, trg len, trg len]
 
         return trg_mask
 
 
     def forward(self, src, trg, label):
-        #src = [batch size, src len, dim]
-        #trg = [batch size, trg len, dim]
 
         src_mask = self.make_src_mask(src)
         trg_mask = self.make_trg_mask(trg)
-        #src_mask = [batch size, 1, 1, src len]
-        #trg_mask = [batch size, 1, trg len, trg len]
 
         enc_src = self.encoder(src, src_mask)
-        #enc_src = [batch size, src len, hid dim]
 
         output, attention = self.decoder(trg, enc_src, trg_mask, src_mask)
-        #output = [batch size, trg len, output dim]
-        #attention = [batch size, n heads, trg len, src len]
 
         src_mask_2 = self.make_src_mask(output)
 

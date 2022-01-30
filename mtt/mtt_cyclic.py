@@ -115,7 +115,6 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
     print(f'Test Loss: {test_loss:.4f} ')
 
 
-
 def train(model, train_loader, optimizer, criterion, params, device, clip=10):
 
     model.train()
@@ -143,7 +142,6 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=10):
 
             trg2 = pad_modality(vision, vision.shape[2] + 1, vision.shape[2])
 
-        # trg = trg.to(device=device)
         trg1 = trg1.to(device=device)
         trg2 = trg2.to(device=device)
 
