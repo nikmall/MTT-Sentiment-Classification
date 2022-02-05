@@ -4,8 +4,9 @@ import torch.nn.functional as F
 import torch
 import math
 
+
 class PositionalEncoding(nn.Module):
-    def __init__(self, d_model: int, max_len: int ):
+    def __init__(self, d_model: int, max_len: int):
         super().__init__()
 
         position = torch.arange(max_len).unsqueeze(1)
@@ -23,13 +24,14 @@ class PositionalEncoding(nn.Module):
         x = x + self.pe[:x.size(0)]
         return x
 
+
 class Encoder(nn.Module):
-    def __init__(self, input_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length):
+    def __init__(self, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length, kdim, vdim, dropout_att):
         super().__init__()
 
         self.device = device
         self.pos_encoder = PositionalEncoding(hid_dim, max_length)
-        self.layers = nn.ModuleList([EncoderLayer(hid_dim, n_heads, pf_dim, dropout, device) for _ in range(n_layers)])
+        self.layers = nn.ModuleList([EncoderLayer(hid_dim, n_heads, pf_dim, dropout, kdim, vdim, dropout_att, device) for _ in range(n_layers)])
         self.dropout = nn.Dropout(dropout)
         self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(device)
 
@@ -48,17 +50,19 @@ class Encoder(nn.Module):
 
 
 class EncoderLayer(nn.Module):
-    def __init__(self, hid_dim, n_heads, pf_dim, dropout, device):
+    def __init__(self, hid_dim, n_heads, pf_dim, dropout, kdim, vdim, dropout_att, device):
         super().__init__()
 
-        self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
+        # self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
+        self.self_attention = nn.MultiheadAttention(embed_dim=hid_dim, num_heads=n_heads, kdim=kdim,
+                                                    vdim=vdim, batch_first=True, dropout=dropout_att)
         self.self_attn_layer_norm = nn.LayerNorm(hid_dim)
         self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
         self.ff_layer_norm = nn.LayerNorm(hid_dim)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, src, src_mask):
-        _src, _ = self.self_attention(src, src, src, src_mask)
+        _src, _ = self.self_attention(src, src, src, key_padding_mask=src_mask.squeeze())
 
         src = self.self_attn_layer_norm(src + self.dropout(_src))
 
@@ -143,7 +147,6 @@ class Attention(nn.Module):
         self.v = nn.Linear(dec_hid_dim, 1, bias=False)
 
     def forward(self, hidden, encoder_outputs):
-
         batch_size = encoder_outputs.shape[1]
         src_len = encoder_outputs.shape[0]
 
@@ -159,14 +162,14 @@ class Attention(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, output_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length, kdim, vdim):
+    def __init__(self, output_dim, hid_dim, n_layers, n_heads, pf_dim, dropout, device, max_length, kdim, vdim, dropout_att):
         super().__init__()
 
         self.device = device
 
         self.pos_encoder = PositionalEncoding(hid_dim, max_length)
 
-        self.layers = nn.ModuleList([DecoderLayer(hid_dim, n_heads, pf_dim, dropout, device, kdim, vdim)
+        self.layers = nn.ModuleList([DecoderLayer(hid_dim, n_heads, pf_dim, dropout, device, kdim, vdim, dropout_att)
                                      for _ in range(n_layers)])
 
         self.fc_out = nn.Linear(hid_dim, output_dim)
@@ -192,25 +195,28 @@ class Decoder(nn.Module):
 
 
 class DecoderLayer(nn.Module):
-    def __init__(self, hid_dim, n_heads, pf_dim, dropout, device, kdim, vdim):
+    def __init__(self, hid_dim, n_heads, pf_dim, dropout, device, kdim, vdim, dropout_att):
         super().__init__()
-
+        self.n_heads = n_heads
         self.self_attn_layer_norm = nn.LayerNorm(hid_dim)
         self.enc_attn_layer_norm = nn.LayerNorm(hid_dim)
         self.ff_layer_norm = nn.LayerNorm(hid_dim)
 
         self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
-        self.encoder_attention = nn.MultiheadAttention(embed_dim=hid_dim,num_heads= n_heads, kdim =kdim,
-                                                       vdim = vdim, batch_first =True)
+        # self.self_attention = nn.MultiheadAttention(embed_dim=hid_dim, num_heads=n_heads, kdim=kdim,
+        #                                               vdim=vdim, batch_first=True, dropout=dropout_att)
+        self.encoder_attention = nn.MultiheadAttention(embed_dim=hid_dim, num_heads=n_heads, kdim=kdim,
+                                                       vdim=vdim, batch_first=True, dropout=dropout_att)
         self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, trg, enc_src, trg_mask, src_mask):
+        # trg_mask = torch.repeat_interleave(trg_mask.squeeze(), self.n_heads, dim=0)
         _trg, _ = self.self_attention(trg, trg, trg, trg_mask)
 
         trg = self.self_attn_layer_norm(trg + self.dropout(_trg))
 
-        _trg, attention = self.encoder_attention(trg, enc_src, enc_src, key_padding_mask =src_mask.squeeze())
+        _trg, attention = self.encoder_attention(trg, enc_src, enc_src, key_padding_mask=src_mask.squeeze())
 
         trg = self.enc_attn_layer_norm(trg + self.dropout(_trg))
 
@@ -230,7 +236,8 @@ class SentRegressorRNN(nn.Module):
         self.n_layers = n_layers
         self.bidirect = bidirect
 
-        self.lstm = nn.LSTM(input_size=self.input_dim,hidden_size= self.hidden_dim, bidirectional=self.bidirect, dropout=dropout,
+        self.lstm = nn.LSTM(input_size=self.input_dim, hidden_size=self.hidden_dim, bidirectional=self.bidirect,
+                            dropout=dropout,
                             num_layers=self.n_layers, batch_first=True)
         if self.bidirect:
             self.fc = nn.Linear(self.hidden_dim * 2, self.output_dim)
@@ -266,7 +273,7 @@ class Seq2SeqTransformerRNN(nn.Module):
     def make_src_mask(self, src):
         src_pad = torch.zeros(src.shape[0], src.shape[1], self.src_pad_dim, device=self.device)
 
-        src_mask = torch.all(torch.eq(src, src_pad), axis=2)#.to(device=self.device)
+        src_mask = torch.all(torch.eq(src, src_pad), axis=2)  # .to(device=self.device)
 
         src_mask = src_mask.unsqueeze(1).unsqueeze(2)
 
@@ -275,7 +282,7 @@ class Seq2SeqTransformerRNN(nn.Module):
     def make_trg_mask(self, trg):
         trg_pad = torch.zeros(trg.shape[0], trg.shape[1], trg.shape[2], device=self.device)
 
-        trg_pad_mask = torch.all(torch.eq(trg, trg_pad), axis=2).unsqueeze(1).unsqueeze(2)#.to(device=self.device)
+        trg_pad_mask = torch.all(torch.eq(trg, trg_pad), axis=2).unsqueeze(1).unsqueeze(2)  # .to(device=self.device)
 
         trg_len = trg.shape[1]
 
@@ -285,11 +292,9 @@ class Seq2SeqTransformerRNN(nn.Module):
 
         return trg_mask
 
-
     def forward(self, src, trg1, label):
         src_mask = self.make_src_mask(src)
         trg_mask = self.make_trg_mask(trg1)
-
 
         enc_src = self.encoder(src, src_mask)
 
@@ -319,6 +324,7 @@ class SentRegressor(nn.Module):
         self.device = device
         self.fc = nn.Linear(300, self.output_dim)
         self.fc2 = nn.Linear(self.output_dim, 1)
+
     def forward(self, enc_src):
         mean_embeds = torch.mean(enc_src, dim=1)
         mean_embeds = mean_embeds.to(self.device)
@@ -343,7 +349,7 @@ class Seq2SeqTransformer(nn.Module):
     def make_src_mask(self, src):
         src_pad = torch.zeros(src.shape[0], src.shape[1], self.src_pad_dim, device=self.device)
 
-        src_mask = torch.all(torch.eq(src, src_pad), axis=2)#.to(device=self.device)
+        src_mask = torch.all(torch.eq(src, src_pad), axis=2)  # .to(device=self.device)
 
         src_mask = src_mask.unsqueeze(1).unsqueeze(2)
 
@@ -352,7 +358,7 @@ class Seq2SeqTransformer(nn.Module):
     def make_trg_mask(self, trg):
         trg_pad = torch.zeros(trg.shape[0], trg.shape[1], self.trg_pad_dim, device=self.device)
 
-        trg_pad_mask = torch.all(torch.eq(trg, trg_pad), axis=2).unsqueeze(1).unsqueeze(2)#.to(device=self.device)
+        trg_pad_mask = torch.all(torch.eq(trg, trg_pad), axis=2).unsqueeze(1).unsqueeze(2)  # .to(device=self.device)
 
         trg_len = trg.shape[1]
 
@@ -362,9 +368,7 @@ class Seq2SeqTransformer(nn.Module):
 
         return trg_mask
 
-
     def forward(self, src, trg, label):
-
         src_mask = self.make_src_mask(src)
         trg_mask = self.make_trg_mask(trg)
 

@@ -38,3 +38,4 @@ def mosei_scores(preds, truths, message=''):
     print("F1 score: ", np.round(f_score, 5))
 
     print("-" * 50)
+    return f_score

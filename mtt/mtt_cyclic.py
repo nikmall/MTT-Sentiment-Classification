@@ -74,7 +74,9 @@ def start_mtt_cyclic(train_loader, valid_loader, test_loader, param_mtt, device,
     scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=param_mtt['lr_patience'], min_lr=min_lr,
                                   factor=0.1, verbose=True)
 
-    train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, param_mtt, scheduler, device)
+    f1_score = train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, param_mtt,
+                           scheduler, device)
+    return f1_score
 
 
 def train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, params, scheduler, device):
@@ -109,10 +111,12 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
     model.load_state_dict(torch.load('mtt_cyclic.pt', map_location=device))
 
     test_loss, pred_test, labels_test = evaluate(model, test_loader, criterion, params, device)
-    mosei_scores(pred_test, labels_test, message='Final Test Scores on best val error model')
+    f1_score = mosei_scores(pred_test, labels_test, message='Final Test Scores on best val error model')
 
     print(f'Minimum validation loss overall is {train_loss}')
     print(f'Test Loss: {test_loss:.4f} ')
+
+    return f1_score
 
 
 def train(model, train_loader, optimizer, criterion, params, device, clip=10):
