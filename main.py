@@ -9,7 +9,7 @@ from mctn_rnn.mctn import start_mctn
 from mtt.mtt_cyclic import start_mtt_cyclic
 from mtt_fuse.mtt_fuse import start_mtt_fuse
 
-seed = 1042
+seed = 1
 torch.cuda.manual_seed(seed)
 random.seed(seed)
 np.random.seed(seed)
@@ -34,7 +34,7 @@ def main():
 
     parser.add_argument('--epochs', default=50, type=int, help='Number of epochs to train. If none, use from param file')
     parser.add_argument('--cont_loaded', type=bool, default=False, help='To load existing saved model and continue')
-    parser.add_argument('--tune', action='store_true', help='Pass tune to parameters If you wish to  perform tuning')
+    # parser.add_argument('--tune', action='store_true', help='Pass tune to parameters If you wish to  perform tuning')
 
     args = parser.parse_args()
 
