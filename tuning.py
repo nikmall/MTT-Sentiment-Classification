@@ -35,7 +35,7 @@ def objective(trial):
         "sent_hid_dim": trial.suggest_int("sent_hid_dim", 90, 204),
         "sent_final_hid": trial.suggest_int("sent_final_hid", 80, 170),
         "sent_dropout": trial.suggest_float("sent_dropout", 0.15, 0.40, step=0.01),
-        "sent_n_layers": trial.suggest_int("sent_n_layers", 2, 3),
+        "sent_n_layers": trial.suggest_int("sent_n_layers", 1, 3),
         "bidirect": trial.suggest_categorical("bidirect", [True, False]),
 
         "transformer_regression": False,
@@ -47,7 +47,7 @@ def objective(trial):
         'loss_regress_weight': 0.9,
 
         'fuse_modalities': True,
-        "cyclic": trial.suggest_categorical("cyclic", [True, False])
+        "cyclic": True # trial.suggest_categorical("cyclic", [True, False])
     }
 
     f1_score = process(epochs, dataset, model_type, param_mtt_fuse)
