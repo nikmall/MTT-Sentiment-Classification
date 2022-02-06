@@ -9,7 +9,7 @@ from mctn_rnn.mctn import start_mctn
 from mtt.mtt_cyclic import start_mtt_cyclic
 from mtt_fuse.mtt_fuse import start_mtt_fuse
 
-seed = 1
+seed = 0
 torch.cuda.manual_seed(seed)
 random.seed(seed)
 np.random.seed(seed)
