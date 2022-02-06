@@ -15,7 +15,7 @@ def objective(trial):
 
     dataset = 'mosei_senti'
 
-    epochs = 2
+    epochs = 50
     model_type = 'mtt_fuse'
 
     param_mtt_fuse = {
