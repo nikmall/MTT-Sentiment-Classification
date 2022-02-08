@@ -306,8 +306,8 @@ class Seq2SeqTransformerRNN(nn.Module):
 
         trg_mask_1_2 = self.make_trg_mask(enc_src_1_2)
 
-        # output_2, attention_2 = self.decoder(src, enc_src_1_2, trg_mask_1_2, src_mask)
-        output_2 = src
+        output_2, attention_2 = self.decoder(src, enc_src_1_2, trg_mask_1_2, src_mask)
+
         regression_score = self.regression(enc_src_1_2)
 
         return output, output_2, regression_score
