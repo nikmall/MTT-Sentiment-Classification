@@ -167,7 +167,7 @@ class Decoder(nn.Module):
 
         self.device = device
 
-        self.pos_encoder = PositionalEncoding(hid_dim, max_length)
+        self.pos_encoder = PositionalEncoding(output_dim, max_length)
 
         self.layers = nn.ModuleList([DecoderLayer(hid_dim, n_heads, pf_dim, dropout, device, kdim, vdim, dropout_att)
                                      for _ in range(n_layers)])
@@ -308,7 +308,7 @@ class Seq2SeqTransformerRNN(nn.Module):
 
         output_2, attention_2 = self.decoder(src, enc_src_1_2, trg_mask_1_2, src_mask)
 
-        regression_score = self.regression(enc_src_1_2)
+        regression_score = self.regression(output_2)
 
         return output, output_2, regression_score
 
