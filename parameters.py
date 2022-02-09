@@ -83,8 +83,8 @@ param_mtt_fuse = {
 
     "n_epochs": 150,
     'lr_patience': 20,
-    'loss_dec_weight': 0.5,
-    'loss_dec_cycle_weight': 0.5,
+    'loss_dec_weight': 0.18,
+    'loss_dec_cycle_weight': 0.12,
     'loss_regress_weight': 0.9,
 
     'fuse_modalities': True,
