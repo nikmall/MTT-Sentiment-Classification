@@ -29,10 +29,15 @@ def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, e
     MAX_LENGTH_ENC = 50
     MAX_LENGTH_DEC = 50
 
+    if not param_mtt['cyclic']:
+        output_dim = train_loader.dataset.vision.shape[2] + train_loader.dataset.audio.shape[2] + 2
+    else:
+        output_dim = DEC_EMB_DIM
+
     enc = Encoder(hid_dim=HID_DIM, n_layers=ENC_LAYERS, n_heads=ENC_HEADS, pf_dim=ENC_PF_DIM, dropout=ENC_DROPOUT,
                   device=device, max_length=MAX_LENGTH_ENC, kdim=ENC_EMB_DIM, vdim=ENC_EMB_DIM, dropout_att=ATT_DROPOUT)
 
-    dec = Decoder(output_dim=DEC_EMB_DIM, hid_dim=HID_DIM, n_layers=DEC_LAYERS, n_heads=DEC_HEADS, pf_dim=DEC_PF_DIM,
+    dec = Decoder(output_dim=output_dim, hid_dim=HID_DIM, n_layers=DEC_LAYERS, n_heads=DEC_HEADS, pf_dim=DEC_PF_DIM,
                   dropout=DEC_DROPOUT, device=device, max_length=MAX_LENGTH_DEC, kdim=ENC_EMB_DIM, vdim=ENC_EMB_DIM,
                   dropout_att=ATT_DROPOUT)
 
@@ -118,7 +123,7 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
     return f1_score
 
 
-def train(model, train_loader, optimizer, criterion, params, device, clip=10):
+def train(model, train_loader, optimizer, criterion, params, device, clip=1):
     model.train()
     epoch_loss = 0
     preds = []
