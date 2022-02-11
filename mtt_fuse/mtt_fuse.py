@@ -123,7 +123,7 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
     return f1_score
 
 
-def train(model, train_loader, optimizer, criterion, params, device, clip=1):
+def train(model, train_loader, optimizer, criterion, params, device, clip=10):
     model.train()
     epoch_loss = 0
     preds = []
