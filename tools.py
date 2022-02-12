@@ -26,7 +26,7 @@ def init_weights(m, rand=True):
     if rand:
         for name, param in m.named_parameters():
             if 'weight' in name:
-                nn.init.normal_(param.data, mean=0, std=0.008)
+                nn.init.normal_(param.data, mean=0, std=0.01)
             else:
                 nn.init.constant_(param.data, 0)
     else:
