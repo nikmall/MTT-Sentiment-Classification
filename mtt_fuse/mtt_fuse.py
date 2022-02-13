@@ -1,7 +1,7 @@
 import time
 from torch import optim
 import torch
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.optim.lr_scheduler import ReduceLROnPlateau, MultiStepLR
 
 from mtt_fuse.modules_transformer_fuse import Encoder, Decoder, SentRegressor, SentRegressorRNN, Seq2SeqTransformer, \
     Seq2SeqTransformerRNN
@@ -74,8 +74,7 @@ def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, e
     criter_tran = torch.nn.MSELoss()
     criter_regr = torch.nn.MSELoss()
     criterion = (criter_tran, criter_regr)
-    scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=param_mtt['lr_patience'], min_lr=min_lr,
-                                  factor=0.1, verbose=True)
+    scheduler = MultiStepLR(optimizer, milestones=[18, 28, 38], gamma=0.9, verbose =True)
 
     f1_score = train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, param_mtt,
                            scheduler, device)
@@ -91,7 +90,7 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
 
         train_loss, pred_train, labels_train = train(model, train_loader, optimizer, criterion, params, device)
         valid_loss, pred_val, labels_val = evaluate(model, valid_loader, criterion, params, device)
-        # scheduler.step(valid_loss)
+        scheduler.step()
         end_time = time.time()
 
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
