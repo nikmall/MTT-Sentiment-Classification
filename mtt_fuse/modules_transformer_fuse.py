@@ -53,16 +53,16 @@ class EncoderLayer(nn.Module):
     def __init__(self, hid_dim, n_heads, pf_dim, dropout, kdim, vdim, dropout_att, device):
         super().__init__()
 
-        # self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
-        self.self_attention = nn.MultiheadAttention(embed_dim=hid_dim, num_heads=n_heads, kdim=kdim,
-                                                    vdim=vdim, batch_first=True, dropout=dropout_att)
+        self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
+        # self.self_attention = nn.MultiheadAttention(embed_dim=hid_dim, num_heads=n_heads, kdim=kdim,
+        #                                            vdim=vdim, batch_first=True, dropout=dropout_att)
         self.self_attn_layer_norm = nn.LayerNorm(hid_dim)
         self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
         self.ff_layer_norm = nn.LayerNorm(hid_dim)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, src, src_mask):
-        _src, _ = self.self_attention(src, src, src, key_padding_mask=src_mask.squeeze())
+        _src, _ = self.self_attention(src, src, src, src_mask)
 
         src = self.self_attn_layer_norm(src + self.dropout(_src))
 
@@ -205,8 +205,9 @@ class DecoderLayer(nn.Module):
         self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
         # self.self_attention = nn.MultiheadAttention(embed_dim=hid_dim, num_heads=n_heads, kdim=kdim,
         #                                               vdim=vdim, batch_first=True, dropout=dropout_att)
-        self.encoder_attention = nn.MultiheadAttention(embed_dim=hid_dim, num_heads=n_heads, kdim=kdim,
-                                                       vdim=vdim, batch_first=True, dropout=dropout_att)
+        # self.encoder_attention = nn.MultiheadAttention(embed_dim=hid_dim, num_heads=n_heads, kdim=kdim,
+        #                                                vdim=vdim, batch_first=True, dropout=dropout_att)
+        self.encoder_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
         self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
         self.dropout = nn.Dropout(dropout)
 
@@ -216,7 +217,8 @@ class DecoderLayer(nn.Module):
 
         trg = self.self_attn_layer_norm(trg + self.dropout(_trg))
 
-        _trg, attention = self.encoder_attention(trg, enc_src, enc_src, key_padding_mask=src_mask.squeeze())
+        # _trg, attention = self.encoder_attention(trg, enc_src, enc_src, key_padding_mask=src_mask.squeeze())
+        _trg, attention = self.encoder_attention(trg, enc_src, enc_src, src_mask)
 
         trg = self.enc_attn_layer_norm(trg + self.dropout(_trg))
 
