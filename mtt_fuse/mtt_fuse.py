@@ -68,13 +68,13 @@ def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, e
 
     print(f'The model has {count_parameters(model):,} trainable parameters')
 
-    init_lr = 0.00002
+    init_lr = 0.0001
     min_lr = 0.0001
     optimizer = optim.Adam(model.parameters(), init_lr)
     criter_tran = torch.nn.MSELoss()
     criter_regr = torch.nn.MSELoss()
     criterion = (criter_tran, criter_regr)
-    scheduler = MultiStepLR(optimizer, milestones=[18, 28, 38], gamma=0.9, verbose =True)
+    scheduler = MultiStepLR(optimizer, milestones=[30], gamma=0.8)
 
     f1_score = train_model(model, train_loader, valid_loader, test_loader, optimizer, criterion, N_EPOCHS, param_mtt,
                            scheduler, device)
@@ -90,7 +90,7 @@ def train_model(model, train_loader, valid_loader, test_loader, optimizer, crite
 
         train_loss, pred_train, labels_train = train(model, train_loader, optimizer, criterion, params, device)
         valid_loss, pred_val, labels_val = evaluate(model, valid_loader, criterion, params, device)
-        # scheduler.step()
+        scheduler.step()
         end_time = time.time()
 
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
