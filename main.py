@@ -11,10 +11,11 @@ from mtt_fuse.mtt_fuse import start_mtt_fuse
 
 seed = 88
 torch.manual_seed(seed)
+torch.cuda.manual_seed(seed)
 random.seed(seed)
 np.random.seed(seed)
 torch.backends.cudnn.deterministic = True
-# torch.backends.cudnn.enabled = False
+torch.backends.cudnn.benchmark = False
 
 if torch.cuda.is_available():
     print("using cuda")
