@@ -38,9 +38,12 @@ def get_dataloaders(dataset, seed_custom, scale=True):
     if scale:
         scale_data(train_data, valid_data, test_data)
 
-    train_loader = DataLoader(train_data, batch_size=param["batch_size"], shuffle=True, generator=g)
-    valid_loader = DataLoader(valid_data, batch_size=param["batch_size"], shuffle=True, generator=g)
-    test_loader = DataLoader(test_data, batch_size=param["batch_size"], shuffle=True, generator=g)
+    train_loader = DataLoader(train_data, batch_size=param["batch_size"], worker_init_fn=seed_worker,
+                              shuffle=True, generator=g)
+    valid_loader = DataLoader(valid_data, batch_size=param["batch_size"], worker_init_fn=seed_worker,
+                              shuffle=True, generator=g)
+    test_loader = DataLoader(test_data, batch_size=param["batch_size"], worker_init_fn=seed_worker,
+                             shuffle=True, generator=g)
 
     return train_loader, valid_loader, test_loader
 
