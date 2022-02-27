@@ -8,8 +8,12 @@ from parameters import param
 
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
-def seed_worker(worker_id):
-    worker_seed = torch.initial_seed() % 2**32
+def seed_worker(worker_seed):
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+    torch.manual_seed(worker_seed)
+    torch.cuda.manual_seed_all(worker_seed)
+
     np.random.seed(worker_seed)
     random.seed(worker_seed)
 
@@ -28,8 +32,8 @@ def get_data(dataset, split='train'):
 
 
 def get_dataloaders(dataset, seed_custom, scale=True):
-    g = torch.Generator()
-    g.manual_seed(seed_custom)
+    # g = torch.Generator()
+    # g.manual_seed(seed_custom)
 
     train_data = get_data(dataset, 'train')
     valid_data = get_data(dataset, 'valid')
@@ -39,11 +43,11 @@ def get_dataloaders(dataset, seed_custom, scale=True):
         scale_data(train_data, valid_data, test_data)
 
     train_loader = DataLoader(train_data, batch_size=param["batch_size"], worker_init_fn=seed_worker,
-                              shuffle=True, generator=g)
+                              shuffle=True) # , generator=g
     valid_loader = DataLoader(valid_data, batch_size=param["batch_size"], worker_init_fn=seed_worker,
-                              shuffle=True, generator=g)
+                              shuffle=True)
     test_loader = DataLoader(test_data, batch_size=param["batch_size"], worker_init_fn=seed_worker,
-                             shuffle=True, generator=g)
+                             shuffle=True)
 
     return train_loader, valid_loader, test_loader
 

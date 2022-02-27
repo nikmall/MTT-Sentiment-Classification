@@ -3,6 +3,7 @@ import torch
 import random
 import numpy as np
 
+import tools
 from data_process import get_dataloaders
 from parameters import param_mctn, param_mtt, param_mtt_fuse
 from mctn_rnn.mctn import start_mctn
@@ -10,12 +11,16 @@ from mtt.mtt_cyclic import start_mtt_cyclic
 from mtt_fuse.mtt_fuse import start_mtt_fuse
 
 seed = 88
+
+""" 
+seed = 88
 torch.manual_seed(seed)
 torch.cuda.manual_seed(seed)
 random.seed(seed)
 np.random.seed(seed)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
+"""
 
 if torch.cuda.is_available():
     print("using cuda")
@@ -25,17 +30,17 @@ else:
 
 
 def main():
+    tools.seed_all(seed)
+
     parser = argparse.ArgumentParser(description='CMU-MOSEI Sentiment Classifier')
 
     parser.add_argument('--model', type=str, default='mtt_cyclic',
                         help='Options are: mctn, mtt_cyclic, mtt_fuse')
 
-
     parser.add_argument('--dataset', type=str, default='mosei', help='Enter either mosei or mosi')
 
     parser.add_argument('--epochs', default=50, type=int, help='Number of epochs to train. If none, use from param file')
     parser.add_argument('--cont_loaded', type=bool, default=False, help='To load existing saved model and continue')
-    # parser.add_argument('--tune', action='store_true', help='Pass tune to parameters If you wish to  perform tuning')
 
     args = parser.parse_args()
 
@@ -59,7 +64,7 @@ def main():
 
 
 def process(epochs, dataset, model_type, params):
-
+    tools.seed_all(seed)
     print(f'Processing dataset {dataset} for training on {model_type} model type')
 
     train_loader, valid_loader, test_loader = get_dataloaders(dataset, seed, scale=True)

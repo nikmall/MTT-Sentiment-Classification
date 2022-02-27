@@ -1,5 +1,10 @@
 import math
 from datetime import time
+
+import numpy as np
+import random
+import torch
+import torch.nn as nn
 import torch.nn as nn
 
 def asMinutes(s):
@@ -36,3 +41,16 @@ def init_weights(m, rand=True):
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
+def seed_all(seed):
+
+    torch.cuda.empty_cache()
+
+    random.seed(seed)
+    np.random.seed(seed)
+
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
