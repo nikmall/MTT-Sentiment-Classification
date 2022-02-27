@@ -30,7 +30,7 @@ else:
 
 
 def main():
-    tools.seed_all(seed)
+    # tools.seed_all(seed)
 
     parser = argparse.ArgumentParser(description='CMU-MOSEI Sentiment Classifier')
 
@@ -47,7 +47,6 @@ def main():
     model_type = str.lower(args.model.strip())
 
     epochs = int(args.epochs)
-    cont_loaded = args.cont_loaded
 
     dataset = str.lower(args.dataset.strip())
     if dataset == 'mosei':
@@ -65,6 +64,7 @@ def main():
 
 def process(epochs, dataset, model_type, params):
     tools.seed_all(seed)
+
     print(f'Processing dataset {dataset} for training on {model_type} model type')
 
     train_loader, valid_loader, test_loader = get_dataloaders(dataset, seed, scale=True)

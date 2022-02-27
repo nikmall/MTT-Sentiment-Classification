@@ -1,4 +1,5 @@
 import math
+import os
 from datetime import time
 
 import numpy as np
@@ -46,10 +47,12 @@ def count_parameters(model):
 def seed_all(seed):
 
     torch.cuda.empty_cache()
+    os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":16:8"
 
     random.seed(seed)
     np.random.seed(seed)
 
+    torch.use_deterministic_algorithms(True)
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
     torch.manual_seed(seed)
