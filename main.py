@@ -10,7 +10,7 @@ from mctn_rnn.mctn import start_mctn
 from mtt.mtt_cyclic import start_mtt_cyclic
 from mtt_fuse.mtt_fuse import start_mtt_fuse
 
-seed = 88
+
 
 """ 
 seed = 88
@@ -30,7 +30,7 @@ else:
 
 
 def main():
-    # tools.seed_all(seed)
+    seed = 89
 
     parser = argparse.ArgumentParser(description='CMU-MOSEI Sentiment Classifier')
 
@@ -59,10 +59,11 @@ def main():
     elif model_type == 'mctn':
         params = param_mctn
 
-    score = process(epochs, dataset, model_type, params)
+    score = process(epochs, dataset, model_type, params, seed)
 
 
-def process(epochs, dataset, model_type, params):
+def process(epochs, dataset, model_type, params, seed):
+
     tools.seed_all(seed)
 
     print(f'Processing dataset {dataset} for training on {model_type} model type')
