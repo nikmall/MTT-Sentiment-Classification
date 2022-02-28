@@ -22,7 +22,7 @@ def get_data(dataset, split='train'):
     data_path = os.path.join(param["data_path"], dataset) + f'_{split}_{alignment}.dt'
     if os.path.exists(data_path):
         print(f"  - Found stored {split} data")
-        data = torch.load(data_path)
+        data = torch.load(data_path, encoding='ascii')
     else:
         print(f"  - Creating new {split} data")
         data = Multimodal_Datasets(param["data_path"], dataset, split, param["aligned"])
