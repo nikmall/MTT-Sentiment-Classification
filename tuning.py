@@ -50,8 +50,8 @@ def objective(trial):
         'fuse_modalities': True,
         "cyclic": True # trial.suggest_categorical("cyclic", [True, False])
     }
-
-    f1_score = process(epochs, dataset, model_type, param_mtt_fuse)
+    seed = 89
+    f1_score = process(epochs, dataset, model_type, param_mtt_fuse, seed)
     # f1_score = random.random()
     return f1_score
 
