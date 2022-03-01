@@ -30,7 +30,7 @@ else:
 
 
 def main():
-    seed = 89
+    seed = 17
 
     parser = argparse.ArgumentParser(description='CMU-MOSEI Sentiment Classifier')
 
