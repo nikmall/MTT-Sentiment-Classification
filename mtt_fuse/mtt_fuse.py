@@ -62,7 +62,7 @@ def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, e
         regression = SentRegressorRNN(ENC_EMB_DIM, SENT_HID_DIM, SENT_FINAL_HID, SENT_N_LAYERS, SENT_DROPOUT, BIDIRECT)
         model = Seq2SeqTransformerRNN(enc, dec, SRC_PAD_DIM, TRG_PAD_DIM, regression, device).to(device)
 
-    print(model)
+    # print(model)
 
     model.apply(init_weights)
 
