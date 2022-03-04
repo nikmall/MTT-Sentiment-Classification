@@ -34,7 +34,7 @@ def main():
 
     parser = argparse.ArgumentParser(description='CMU-MOSEI Sentiment Classifier')
 
-    parser.add_argument('--model', type=str, default='mtt_cyclic',
+    parser.add_argument('--model', type=str, default='mtt_fuse',
                         help='Options are: mctn, mtt_cyclic, mtt_fuse')
 
     parser.add_argument('--dataset', type=str, default='mosei', help='Enter either mosei or mosi')
