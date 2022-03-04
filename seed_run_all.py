@@ -55,7 +55,7 @@ def processing():
 
         f1_score = process(epochs, dataset, model_type, param_mtt_fuse, seed)
         seed_scores = np.vstack((seed_scores, np.array([(seed, f1_score)])))
-        print(seed_scores.shape)
+
         if f1_score > max_score:
             max_score = f1_score
             best_seed = seed
