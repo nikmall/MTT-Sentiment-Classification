@@ -67,8 +67,7 @@ def processing():
     train_loader, valid_loader, test_loader = get_dataloaders(dataset, seed, scale=True)
     for x in range(3):
 
-        # f1_score = start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt_fuse, device, epochs)
-        f1_score = random.random()
+        f1_score = start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt_fuse, device, epochs)
         seed_scores = np.vstack((seed_scores, np.array([(seed, f1_score)])))
 
 
