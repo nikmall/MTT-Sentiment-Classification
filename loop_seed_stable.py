@@ -63,17 +63,18 @@ def processing():
         device = torch.device("cpu")
 
     print(f'Processing dataset {dataset} for training on {model_type} model type')
-
+    seed_scores = np.empty(shape=(0, 2))
     train_loader, valid_loader, test_loader = get_dataloaders(dataset, seed, scale=True)
     for x in range(3):
 
-        f1_score  = start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt_fuse, device, epochs)
+        # f1_score = start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt_fuse, device, epochs)
+        f1_score = random.random()
         seed_scores = np.vstack((seed_scores, np.array([(seed, f1_score)])))
 
 
         print(f"For seed {seed} the f1_score is {f1_score}")
         # scores_np = np.array(list(seed_scores))
-        np.savetxt("seed_scores.txt", seed_scores, delimiter=",")
+        np.savetxt("loop_scores.txt", seed_scores, delimiter=",")
 
 
 
