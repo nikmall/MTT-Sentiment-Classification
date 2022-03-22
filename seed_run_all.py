@@ -7,6 +7,8 @@ import optuna
 import argparse
 import numpy as np
 import random
+
+import tools
 from main import process
 
 def processing():
@@ -47,12 +49,12 @@ def processing():
         "cyclic": True
     }
 
-    seeds = [62, 63, 64, 65, 66, 67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87]
+    seeds = [62, 62, 62, 62]
     max_score = 0
     seed_scores = np.empty(shape=(0, 2))
     best_seed = 0
     for seed in seeds:
-
+        tools.seed_all()
         f1_score = process(epochs, dataset, model_type, param_mtt_fuse, seed)
         seed_scores = np.vstack((seed_scores, np.array([(seed, f1_score)])))
 
