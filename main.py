@@ -64,7 +64,7 @@ def main():
 
 def process(epochs, dataset, model_type, params, seed):
 
-    tools.seed_all(seed)
+    # tools.seed_all(seed)
 
     print(f'Processing dataset {dataset} for training on {model_type} model type')
 
