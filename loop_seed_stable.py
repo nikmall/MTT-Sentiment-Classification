@@ -64,9 +64,9 @@ def processing():
 
     print(f'Processing dataset {dataset} for training on {model_type} model type')
     seed_scores = np.empty(shape=(0, 2))
+    train_loader, valid_loader, test_loader = get_dataloaders(dataset, seed, scale=True)
 
     for x in range(3):
-        train_loader, valid_loader, test_loader = get_dataloaders(dataset, seed, scale=True)
         f1_score = start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt_fuse, device, epochs)
         seed_scores = np.vstack((seed_scores, np.array([(seed, f1_score)])))
 
