@@ -53,8 +53,9 @@ def processing():
     max_score = 0
     seed_scores = np.empty(shape=(0, 2))
     best_seed = 0
+    tools.seed_all(62)
+
     for seed in seeds:
-        tools.seed_all(seed)
         f1_score = process(epochs, dataset, model_type, param_mtt_fuse, seed)
         seed_scores = np.vstack((seed_scores, np.array([(seed, f1_score)])))
 
