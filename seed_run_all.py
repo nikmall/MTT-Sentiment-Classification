@@ -49,7 +49,7 @@ def processing():
         "cyclic": True
     }
 
-    seeds = [62, 62, 62, 62]
+    seeds = [62, 62, 62]
     max_score = 0
     seed_scores = np.empty(shape=(0, 2))
     best_seed = 0
