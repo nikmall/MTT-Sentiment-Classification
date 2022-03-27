@@ -67,7 +67,7 @@ param_mtt_fuse = {
     "dec_layers": 3,
     "enc_heads": 6,
     "dec_heads": 6,
-    "enc_pf_dim": 490,
+    "enc_pf_dim": 520,
     "dec_pf_dim": 490,
     "enc_dropout": 0.31,
     "dec_dropout": 0.31,
