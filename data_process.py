@@ -39,8 +39,6 @@ def get_data(dataset, split='train'):
 
 
 def get_dataloaders(dataset, seed_custom, scale=True):
-    g = torch.Generator()
-    g.manual_seed(seed_custom)
 
     train_data = get_data(dataset, 'train')
     valid_data = get_data(dataset, 'valid')
