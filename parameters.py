@@ -69,8 +69,8 @@ param_mtt_fuse = {
     "dec_heads": 6,
     "enc_pf_dim": 490,
     "dec_pf_dim": 490,
-    "enc_dropout": 0.3,
-    "dec_dropout": 0.3,
+    "enc_dropout": 0.31,
+    "dec_dropout": 0.31,
     'att_dropout': 0.3,
 
     "sent_hid_dim": 156,
