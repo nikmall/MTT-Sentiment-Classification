@@ -59,12 +59,12 @@ def main():
     elif model_type == 'mctn':
         params = param_mctn
 
+    tools.seed_all(seed)
     score = process(epochs, dataset, model_type, params, seed)
 
 
 def process(epochs, dataset, model_type, params, seed):
 
-    tools.seed_all(seed)
 
     print(f'Processing dataset {dataset} for training on {model_type} model type')
 
