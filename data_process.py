@@ -8,7 +8,6 @@ from parameters import param
 
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
-
 def seed_worker(worker_seed):
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
@@ -17,12 +16,6 @@ def seed_worker(worker_seed):
 
     np.random.seed(worker_seed)
     random.seed(worker_seed)
-"""
-def seed_worker(worker_id):
-    worker_seed = torch.initial_seed()
-    np.random.seed(worker_seed)
-    random.seed(worker_seed)
-"""
 
 def get_data(dataset, split='train'):
     alignment = 'a' if param["aligned"] else 'na'
@@ -39,6 +32,8 @@ def get_data(dataset, split='train'):
 
 
 def get_dataloaders(dataset, seed_custom, scale=True):
+    # g = torch.Generator()
+    # g.manual_seed(seed_custom)
 
     train_data = get_data(dataset, 'train')
     valid_data = get_data(dataset, 'valid')
