@@ -54,7 +54,7 @@ def processing():
         "cyclic": True
     }
 
-    seed = 62
+    seed = 17
     tools.seed_all(seed)
     if torch.cuda.is_available():
         print("using cuda")
