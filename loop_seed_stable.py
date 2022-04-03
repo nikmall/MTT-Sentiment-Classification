@@ -19,7 +19,7 @@ from mtt_fuse.mtt_fuse import start_mtt_fuse
 def processing():
     dataset = 'mosei_senti'
 
-    epochs = 50
+    epochs = 5
     model_type = 'mtt_fuse'
 
     param_mtt_fuse = {
