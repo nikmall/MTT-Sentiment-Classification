@@ -75,7 +75,7 @@ param_mtt_fuse = {
 
     "sent_hid_dim": 156,
     "sent_final_hid": 132,
-    "sent_dropout": 0.25,
+    "sent_dropout": 0.31,
     "sent_n_layers": 2,
     "bidirect": True,
 
@@ -83,7 +83,7 @@ param_mtt_fuse = {
 
     "n_epochs": 150,
     'lr_patience': 20,
-    'loss_dec_weight': 0.15,
+    'loss_dec_weight': 0.12,
     'loss_dec_cycle_weight': 0.10,
     'loss_regress_weight': 0.9,
 
