@@ -1,7 +1,7 @@
 param = {
     "aligned": 'True',
     "data_path": 'data',
-    "batch_size": 32}
+    "batch_size": 16}
 
 param_mctn = {
     "enc_emb_dim": 300,
