@@ -47,7 +47,7 @@ def count_parameters(model):
 def seed_all(seed):
 
     # torch.cuda.empty_cache()
-    os.environ["CUBLAS_WORKSPACE_CONFIG"] = "4096:8"
+    os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
 
     random.seed(seed)
     np.random.seed(seed)
