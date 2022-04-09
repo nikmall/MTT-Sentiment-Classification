@@ -8,7 +8,7 @@ from parameters import param
 
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
-"""
+""" """
 def seed_worker(worker_seed):
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
@@ -17,12 +17,14 @@ def seed_worker(worker_seed):
 
     np.random.seed(worker_seed)
     random.seed(worker_seed)
-"""
 
+
+"""
 def seed_worker(worker_id):
-    worker_seed = torch.initial_seed() % 2**32
+    worker_seed = torch.initial_seed() % 2 ** 32
     np.random.seed(worker_seed)
     random.seed(worker_seed)
+"""
 
 def get_data(dataset, split='train'):
     alignment = 'a' if param["aligned"] else 'na'
@@ -50,13 +52,14 @@ def get_dataloaders(dataset, seed_custom, scale=True):
         scale_data(train_data, valid_data, test_data)
 
     train_loader = DataLoader(train_data, batch_size=param["batch_size"], worker_init_fn=seed_worker,
-                              shuffle=True, generator=g) # , generator=g
+                              shuffle=True, generator=g)  # , generator=g
     valid_loader = DataLoader(valid_data, batch_size=param["batch_size"], worker_init_fn=seed_worker,
                               shuffle=True, generator=g)
     test_loader = DataLoader(test_data, batch_size=param["batch_size"], worker_init_fn=seed_worker,
                              shuffle=True, generator=g)
 
     return train_loader, valid_loader, test_loader
+
 
 def scale_data(train_data, valid_data, test_data, type='stand'):
     # audio
@@ -125,6 +128,7 @@ def scale_data(train_data, valid_data, test_data, type='stand'):
     test_data.vision = torch.tensor(test_vision.reshape(-1, vision_shape[1], vision_shape[2])).cpu().detach()
 
     # return
+
 
 def scale_2d_standard(x, mu=None, std=None):
     if mu is None and std is None:
