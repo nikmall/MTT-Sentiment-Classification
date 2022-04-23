@@ -37,7 +37,7 @@ def init_weights(m, rand=True):
                 nn.init.constant_(param.data, 0)
     else:
         if hasattr(m, 'weight') and m.weight.dim() > 1:
-            nn.init.xavier_uniform_(m.weight.data)
+            nn.init.xavier_normal_(m.weight.data)
 
 
 def count_parameters(model):
