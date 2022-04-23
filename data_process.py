@@ -8,7 +8,7 @@ from parameters import param
 
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
-""" """
+""" 
 def seed_worker(worker_seed):
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
@@ -17,14 +17,14 @@ def seed_worker(worker_seed):
 
     np.random.seed(worker_seed)
     random.seed(worker_seed)
-
-
 """
+
+""""""
 def seed_worker(worker_id):
     worker_seed = torch.initial_seed() % 2 ** 32
     np.random.seed(worker_seed)
     random.seed(worker_seed)
-"""
+
 
 def get_data(dataset, split='train'):
     alignment = 'a' if param["aligned"] else 'na'
