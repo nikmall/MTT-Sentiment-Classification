@@ -310,7 +310,7 @@ class Seq2SeqTransformerRNN(nn.Module):
 
         output_2, attention_2 = self.decoder(src, enc_src_1_2, trg_mask_1_2, src_mask_1_2)
 
-        regression_score = self.regression(output_2)
+        regression_score = self.regression(enc_src)
 
         return output, output_2, regression_score
 
