@@ -138,7 +138,7 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=10):
             if params["cyclic"]:
                 fused_a_v = pad_modality(fused_a_v, text.shape[2], fused_a_v.shape[2])
             else:
-                fused_a_v = pad_modality(fused_a_v, fused_a_v.shape[2] + 2,
+                fused_a_v = pad_modality(fused_a_v, fused_a_v.shape[2] + 1,
                                          fused_a_v.shape[2])  # pad with 1 for divisions
             trg = fused_a_v
         else:
