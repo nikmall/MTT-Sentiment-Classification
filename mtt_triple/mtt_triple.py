@@ -3,42 +3,42 @@ from torch import optim
 import torch
 from torch.optim.lr_scheduler import ReduceLROnPlateau, MultiStepLR
 
-from mtt_fuse.modules_transformer_fuse import Encoder, Decoder, SentRegressor, SentRegressorRNN, Seq2SeqTransformer, \
-    Seq2SeqTransformerRNN
+from dataset import pad_modality
+from mtt_triple.modules_transformer_triple import Encoder, Decoder, SentRegressorRNN, Seq2SeqTransformerRNN
 from tools import epoch_time, init_weights, count_parameters
 from score_metrics import mosei_scores
-from dataset import pad_modality
 
 
-def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, epochs):
-    ENC_EMB_DIM = param_mtt['enc_emb_dim']
-    DEC_EMB_DIM = param_mtt['dec_emb_dim']
-    HID_DIM = param_mtt['hid_dim']  # same as text embedding
+def start_triple(train_loader, valid_loader, test_loader, param_mtt, device, epochs):
+
     ENC_LAYERS = param_mtt['enc_layers']
     DEC_LAYERS = param_mtt['dec_layers']
+
     ENC_HEADS = param_mtt['enc_heads']
     DEC_HEADS = param_mtt['dec_heads']
+
     ENC_PF_DIM = param_mtt['enc_pf_dim']
     DEC_PF_DIM = param_mtt['dec_pf_dim']
+
     ENC_DROPOUT = param_mtt['enc_dropout']
     DEC_DROPOUT = param_mtt['dec_dropout']
     ATT_DROPOUT = param_mtt['att_dropout']
 
-
     MAX_LENGTH_ENC = 50
     MAX_LENGTH_DEC = 50
 
-    if not param_mtt['cyclic']:
-        output_dim = train_loader.dataset.vision.shape[2] + train_loader.dataset.audio.shape[2] + 2
-    else:
-        output_dim = DEC_EMB_DIM
+    HID_DIM = param_mtt['hid_dim'] #  dataset.text.shape[2] + dataset.vision.shape[2] + dataset.audio.shape[2] + as needed
+    ENCODER_OUT_DIM = param_mtt['output_dim']
+    DECODER_HID_DIM = HID_DIM
+    DECODER_OUT_DIM = HID_DIM
 
-    enc = Encoder(hid_dim=HID_DIM, n_layers=ENC_LAYERS, n_heads=ENC_HEADS, pf_dim=ENC_PF_DIM, dropout=ENC_DROPOUT,
-                  device=device, max_length=MAX_LENGTH_ENC, kdim=ENC_EMB_DIM, vdim=ENC_EMB_DIM, dropout_att=ATT_DROPOUT)
+    enc = Encoder(output_dim=ENCODER_OUT_DIM, hid_dim=HID_DIM, n_layers=ENC_LAYERS,
+                  n_heads=ENC_HEADS, pf_dim=ENC_PF_DIM, dropout=ENC_DROPOUT,
+                  device=device, max_length=MAX_LENGTH_ENC, kdim=HID_DIM, vdim=HID_DIM, dropout_att=ATT_DROPOUT)
 
-    dec = Decoder(output_dim=output_dim, hid_dim=HID_DIM, n_layers=DEC_LAYERS, n_heads=DEC_HEADS, pf_dim=DEC_PF_DIM,
-                  dropout=DEC_DROPOUT, device=device, max_length=MAX_LENGTH_DEC, kdim=ENC_EMB_DIM, vdim=ENC_EMB_DIM,
-                  dropout_att=ATT_DROPOUT)
+    dec = Decoder(output_dim=DECODER_HID_DIM, enc_dim=ENCODER_OUT_DIM, n_layers=DEC_LAYERS,
+                  n_heads=DEC_HEADS, pf_dim=DEC_PF_DIM, dropout=DEC_DROPOUT,
+                  device=device, max_length=MAX_LENGTH_DEC, kdim=ENCODER_OUT_DIM, vdim=ENCODER_OUT_DIM, dropout_att=ATT_DROPOUT)
 
     SENT_HID_DIM = param_mtt['sent_hid_dim']
     SENT_FINAL_HID = param_mtt['sent_final_hid']
@@ -47,19 +47,13 @@ def start_mtt_fuse(train_loader, valid_loader, test_loader, param_mtt, device, e
     BIDIRECT = param_mtt['bidirect']
 
     N_EPOCHS = epochs if epochs is not None else param_mtt['n_epochs']
-    SRC_PAD_DIM = ENC_EMB_DIM
-    TRG_PAD_DIM = DEC_EMB_DIM
+    SRC_PAD_DIM = HID_DIM
+    TRG_PAD_DIM = DECODER_HID_DIM
 
-    # Transformer only
-    if param_mtt['transformer_regression'] == True:
-        encoder_sent = Encoder(ENC_EMB_DIM, HID_DIM, 2, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device, MAX_LENGTH_ENC)
-        regression = SentRegressor(ENC_EMB_DIM, SENT_HID_DIM, SENT_FINAL_HID, SENT_N_LAYERS, device)
-        model = Seq2SeqTransformer(enc, dec, SRC_PAD_DIM, TRG_PAD_DIM, regression, encoder_sent, device).to(device)
 
-    else:
-        # LSTM
-        regression = SentRegressorRNN(ENC_EMB_DIM, SENT_HID_DIM, SENT_FINAL_HID, SENT_N_LAYERS, SENT_DROPOUT, BIDIRECT)
-        model = Seq2SeqTransformerRNN(enc, dec, SRC_PAD_DIM, TRG_PAD_DIM, regression, device).to(device)
+    # LSTM classification
+    regression = SentRegressorRNN(ENCODER_OUT_DIM, SENT_HID_DIM, SENT_FINAL_HID, SENT_N_LAYERS, SENT_DROPOUT, BIDIRECT)
+    model = Seq2SeqTransformerRNN(enc, dec, SRC_PAD_DIM, TRG_PAD_DIM, regression, device).to(device)
 
     # print(model)
 
@@ -130,19 +124,11 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=10):
     for i_batch, (batch_X, batch_Y, batch_META) in enumerate(train_loader):
         sample_ind, text, audio, vision = batch_X
 
-        src = text.to(device=device)
+        triple = torch.cat((text, audio, vision), dim=2)
+        triple = pad_modality(triple, 413, triple.shape[2])  # 413 for 7 divisor(heads), 414 for 6
 
-        if params["fuse_modalities"]:
-            fused_a_v = torch.cat((audio, vision), dim=2)
-            if params["cyclic"]:
-                fused_a_v = pad_modality(fused_a_v, text.shape[2], fused_a_v.shape[2])
-            else:
-                fused_a_v = pad_modality(fused_a_v, fused_a_v.shape[2] + 1,
-                                         fused_a_v.shape[2])  # pad with 1 for divisions
-            trg = fused_a_v
-        else:
-            raise 'Only Fused Modalities supported'
-
+        src = triple.to(device=device)
+        trg = triple
         trg = trg.to(device=device)
 
         label = batch_Y
@@ -155,7 +141,10 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=10):
         criter_tran = criterion[0]
         criter_regr = criterion[1]
         translate_loss = params['loss_dec_weight'] * criter_tran(decoded, trg)
-        translate_cycle_loss = params['loss_dec_cycle_weight'] * criter_tran(cycled_decoded, src)
+        if params['cyclic']:
+            translate_cycle_loss = params['loss_dec_cycle_weight'] * criter_tran(cycled_decoded, src)
+        else:
+            translate_cycle_loss = 0
         translate_sent_loss = params['loss_regress_weight'] * criter_regr(regression_score, label)
 
         combined_loss = translate_loss + translate_cycle_loss + translate_sent_loss
@@ -186,19 +175,10 @@ def evaluate(model, valid_loader, criterion, params, device):
         for i_batch, (batch_X, batch_Y, batch_META) in enumerate(valid_loader):
             sample_ind, text, audio, vision = batch_X
 
-            src = text.to(device=device)
-
-            if params["fuse_modalities"]:
-                fused_a_v = torch.cat((audio, vision), dim=2)
-                if params["cyclic"]:
-                    fused_a_v = pad_modality(fused_a_v, text.shape[2], fused_a_v.shape[2])
-                else:
-                    fused_a_v = pad_modality(fused_a_v, fused_a_v.shape[2] + 2,
-                                             fused_a_v.shape[2])  # pad with 1 for divisions
-                trg = fused_a_v
-            else:
-                raise 'Only Fused Modalities are supported'
-
+            triple = torch.cat((text, audio, vision), dim=2)
+            triple = pad_modality(triple, 413, triple.shape[2])# 413 for 7 divisor(heads), 414 for 6
+            src = triple.to(device=device)
+            trg = triple
             trg = trg.to(device=device)
 
             label = batch_Y
@@ -209,7 +189,10 @@ def evaluate(model, valid_loader, criterion, params, device):
             criter_tran = criterion[0]
             criter_regr = criterion[1]
             translate_loss = params['loss_dec_weight'] * criter_tran(decoded, trg)
-            translate_cycle_loss = params['loss_dec_cycle_weight'] * criter_tran(cycled_decoded, src)
+            if params['cyclic']:
+                translate_cycle_loss = params['loss_dec_cycle_weight'] * criter_tran(cycled_decoded, src)
+            else:
+                translate_cycle_loss = 0
             translate_sent_loss = params['loss_regress_weight'] * criter_regr(regression_score, label)
 
             combined_loss = translate_loss + translate_cycle_loss + translate_sent_loss

@@ -5,7 +5,8 @@ import numpy as np
 
 import tools
 from data_process import get_dataloaders
-from parameters import param_mctn, param_mtt, param_mtt_fuse
+from mtt_triple.mtt_triple import start_triple
+from parameters import param_mctn, param_mtt, param_mtt_fuse, param_mtt_triple
 from mctn_rnn.mctn import start_mctn
 from mtt.mtt_cyclic import start_mtt_cyclic
 from mtt_fuse.mtt_fuse import start_mtt_fuse
@@ -34,7 +35,7 @@ def main():
 
     parser = argparse.ArgumentParser(description='CMU-MOSEI Sentiment Classifier')
 
-    parser.add_argument('--model', type=str, default='mtt_fuse',
+    parser.add_argument('--model', type=str, default='mtt_triple',
                         help='Options are: mctn, mtt_cyclic, mtt_fuse')
 
     parser.add_argument('--dataset', type=str, default='mosei', help='Enter either mosei or mosi')
@@ -58,6 +59,8 @@ def main():
         params = param_mtt_fuse
     elif model_type == 'mctn':
         params = param_mctn
+    elif model_type == 'mtt_triple':
+        params = param_mtt_triple
 
     score = process(epochs, dataset, model_type, params, seed)
 
@@ -77,6 +80,8 @@ def process(epochs, dataset, model_type, params, seed):
         score = start_mtt_fuse(train_loader, valid_loader, test_loader, params, device, epochs)
     elif model_type == 'mctn':
         score = start_mctn(train_loader, valid_loader, test_loader, params, device, epochs)
+    elif model_type == 'mtt_triple':
+        score = start_triple(train_loader, valid_loader, test_loader, params, device, epochs)
 
     return score
 
