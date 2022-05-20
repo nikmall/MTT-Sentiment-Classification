@@ -119,5 +119,5 @@ param_mtt_triple = {
     'loss_regress_weight': 0.9,
 
     'fuse_modalities': True,
-    "cyclic": False
+    "cyclic": True
 }
