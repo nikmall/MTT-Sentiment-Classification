@@ -287,17 +287,16 @@ class Seq2SeqTransformerRNN(nn.Module):
 
         output, attention = self.decoder(trg1, enc_src, trg_mask, src_mask)
 
-        """ 
-        src_mask_1_2 = self.make_src_mask(output)
+        """  """
+        src_mask_2 = self.make_src_mask(output)
 
-        enc_src_1_2 = self.encoder(output, src_mask_1_2)
+        enc_src_2 = self.encoder(output, src_mask_2)
 
-        trg_mask_1_2 = self.make_trg_mask(enc_src_1_2)
+        trg_mask_2 = self.make_trg_mask(enc_src_2)
 
-        output_2, attention_2 = self.decoder(src, enc_src_1_2, trg_mask_1_2, src_mask_1_2)
-        """
-        output_2 = output
+        output_2, attention_2 = self.decoder(trg1, enc_src_2, trg_mask_2, src_mask_2)
+
+        # output_2 = output
         regression_score = self.regression(enc_src)
 
         return output, output_2, regression_score
-        # return output, regression_score
