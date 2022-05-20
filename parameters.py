@@ -93,7 +93,7 @@ param_mtt_fuse = {
 
 param_mtt_triple = {
     'hid_dim': 413,
-    "output_dim": 301,
+    "output_dim": 200,
     "enc_layers": 3,
     "dec_layers": 3,
     "enc_heads": 7,
@@ -114,7 +114,7 @@ param_mtt_triple = {
 
     "n_epochs": 60,
     'lr_patience': 20,
-    'loss_dec_weight': 0.12,
+    'loss_dec_weight': 0.10,
     'loss_dec_cycle_weight': 0.10,
     'loss_regress_weight': 0.9,
 
