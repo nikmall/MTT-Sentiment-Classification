@@ -147,22 +147,22 @@ class Attention(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, output_dim, enc_dim, n_layers, n_heads, pf_dim, dropout, device,
+    def __init__(self, hid_dim, enc_dim, n_layers, n_heads, pf_dim, dropout, device,
                  max_length, kdim, vdim, dropout_att):
         super().__init__()
 
         self.device = device
 
-        self.pos_embedding = nn.Embedding(max_length, output_dim)
+        self.pos_embedding = nn.Embedding(max_length, hid_dim)
 
-        self.layers = nn.ModuleList([DecoderLayer(output_dim, enc_dim, n_heads, pf_dim, dropout, device, kdim, vdim, dropout_att)
+        self.layers = nn.ModuleList([DecoderLayer(hid_dim, enc_dim, n_heads, pf_dim, dropout, device, kdim, vdim, dropout_att)
                                      for _ in range(n_layers)])
 
         # self.fc_out = nn.Linear(output_dim, enc_dim)
 
         self.dropout = nn.Dropout(dropout)
 
-        self.scale = torch.sqrt(torch.FloatTensor([enc_dim])).to(device)
+        self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(device)
 
     def forward(self, trg, enc_src, trg_mask, src_mask):
         batch_size = trg.shape[0]
@@ -181,24 +181,24 @@ class Decoder(nn.Module):
 
 
 class DecoderLayer(nn.Module):
-    def __init__(self, output_dim, enc_dim, n_heads, pf_dim, dropout, device, kdim, vdim, dropout_att):
+    def __init__(self, hid_dim, enc_dim, n_heads, pf_dim, dropout, device, kdim, vdim, dropout_att):
         super().__init__()
         self.n_heads = n_heads
-        self.self_attn_layer_norm = nn.LayerNorm(output_dim)
+        self.self_attn_layer_norm = nn.LayerNorm(hid_dim)
         # self.enc_attn_layer_norm = nn.LayerNorm(enc_dim)
-        self.ff_layer_norm = nn.LayerNorm(output_dim)
+        self.ff_layer_norm = nn.LayerNorm(hid_dim)
 
         # self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
-        self.self_attention = nn.MultiheadAttention(embed_dim=output_dim, num_heads=n_heads,
+        self.self_attention = nn.MultiheadAttention(embed_dim=hid_dim, num_heads=n_heads, # ADD MASK FOR PROPER SEQ2SEQ APPROACH !!!!
                                                     batch_first=True, dropout=dropout_att)
-        self.encoder_attention = nn.MultiheadAttention(embed_dim=output_dim, num_heads=n_heads, kdim=enc_dim,
-                                                        vdim=enc_dim, batch_first=True, dropout=dropout_att)
+        self.encoder_attention = nn.MultiheadAttention(embed_dim=hid_dim, num_heads=n_heads, kdim=enc_dim,
+                                                        vdim=enc_dim, batch_first=True, dropout=dropout_att) # MASK NOT NEEDED NOT OUTPUT PADDINGS IN ENCODER
         # self.encoder_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
-        self.positionwise_feedforward = PositionwiseFeedforwardLayer(output_dim, pf_dim, dropout)
+        self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, trg, enc_src, trg_mask, src_mask):
-        _trg, _ = self.self_attention(trg, trg, trg) # , trg_mask)
+        _trg, _ = self.self_attention(trg, trg, trg, trg_mask)
 
         trg = self.self_attn_layer_norm(trg + self.dropout(_trg))
 
@@ -269,11 +269,10 @@ class Seq2SeqTransformerRNN(nn.Module):
     def make_trg_mask(self, trg):
         trg_pad = torch.zeros(trg.shape[0], trg.shape[1], trg.shape[2], device=self.device)
 
-        trg_pad_mask = torch.all(torch.eq(trg, trg_pad), axis=2).unsqueeze(1).unsqueeze(2)
+        trg_pad_mask = torch.all(torch.eq(trg, trg_pad), axis=2) # .unsqueeze(1).unsqueeze(2)
 
         trg_len = trg.shape[1]
-
-        trg_sub_mask = torch.tril(torch.ones((trg_len, trg_len), device=self.device)).bool()
+        trg_sub_mask = torch.ones(trg_len, device=self.device).bool()
 
         trg_mask = trg_pad_mask & trg_sub_mask
 

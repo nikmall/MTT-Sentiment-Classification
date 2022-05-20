@@ -36,7 +36,7 @@ def start_triple(train_loader, valid_loader, test_loader, param_mtt, device, epo
                   n_heads=ENC_HEADS, pf_dim=ENC_PF_DIM, dropout=ENC_DROPOUT,
                   device=device, max_length=MAX_LENGTH_ENC, kdim=HID_DIM, vdim=HID_DIM, dropout_att=ATT_DROPOUT)
 
-    dec = Decoder(output_dim=DECODER_HID_DIM, enc_dim=ENCODER_OUT_DIM, n_layers=DEC_LAYERS,
+    dec = Decoder(hid_dim=DECODER_HID_DIM, enc_dim=ENCODER_OUT_DIM, n_layers=DEC_LAYERS,
                   n_heads=DEC_HEADS, pf_dim=DEC_PF_DIM, dropout=DEC_DROPOUT,
                   device=device, max_length=MAX_LENGTH_DEC, kdim=ENCODER_OUT_DIM, vdim=ENCODER_OUT_DIM, dropout_att=ATT_DROPOUT)
 
