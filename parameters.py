@@ -93,12 +93,12 @@ param_mtt_fuse = {
 
 param_mtt_triple = {
     'hid_dim': 413,
-    "output_dim": 200,
+    "output_dim": 301,
     "enc_layers": 3,
     "dec_layers": 3,
     "enc_heads": 7,
     "dec_heads": 7,
-    "enc_pf_dim": 490,
+    "enc_pf_dim": 590,
     "dec_pf_dim": 490,
     "enc_dropout": 0.31,
     "dec_dropout": 0.31,
