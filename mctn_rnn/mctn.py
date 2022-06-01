@@ -88,9 +88,7 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=1):
 
         audio = pad_modality(audio, text.shape[2], audio.shape[2])
         text = text.to(device=device)
-
         audio = audio.to(device=device)
-
         vision = vision.to(device=device)
 
         src = text.permute(1, 0, 2)
@@ -137,12 +135,16 @@ def evaluate(model, valid_loader, criterion, params, device):
         for i_batch, (batch_X, batch_Y, batch_META) in enumerate(valid_loader):
             sample_ind, text, audio, vision = batch_X
 
+            audio = pad_modality(audio, text.shape[2], audio.shape[2])
             text = text.to(device=device)
             audio = audio.to(device=device)
             vision = vision.to(device=device)
 
             src = text.permute(1, 0, 2)
+            src = src.to(device=device)
             trg = audio.permute(1, 0, 2)
+            trg = trg.to(device=device)
+
             label = batch_Y.permute(1, 0, 2)
             label = label.squeeze(0).to(device=device)
 
