@@ -153,7 +153,7 @@ class Seq2Seq(nn.Module):
 
 
         # first input to the decoder is just zeros
-        input = torch.zeros(batch_size, self.decoder.emb_dim)..to(device=device)
+        input = torch.zeros(batch_size, self.decoder.emb_dim).to(device=device)
 
         for t in range(0, trg_len):
             output, hidden, cell = self.decoder(input, hidden, cell, encoder_outputs)
