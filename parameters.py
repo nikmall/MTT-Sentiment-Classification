@@ -6,17 +6,17 @@ param = {
 param_mctn = {
     "enc_emb_dim": 300,
     "dec_emb_dim": 300,
-    "enc_hid_dim": 512,
-    "dec_hid_dim": 512,
-    "enc_dropout": 0.4,
-    "dec_dropout": 0.4,
-    "sent_hid_dim": 256,
+    "enc_hid_dim": 470,
+    "dec_hid_dim": 470,
+    "enc_dropout": 0.35,
+    "dec_dropout": 0.35,
+    "sent_hid_dim": 156,
     "sent_dropout": 0.4,
     "n_layers": 2,
     "n_epochs": 50,
     'loss_dec_weight': 0.1,
     'loss_dec_cycle_weight': 0.1,
-    'loss_regress_weight': 1.0
+    'loss_regress_weight': 0.9
 }
 
 
@@ -88,5 +88,5 @@ param_mtt_fuse = {
     'loss_regress_weight': 0.9,
 
     'fuse_modalities': True,
-    "cyclic": False
+    "cyclic": True
 }
