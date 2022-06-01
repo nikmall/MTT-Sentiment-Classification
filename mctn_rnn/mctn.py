@@ -1,5 +1,7 @@
 import time
 from torch import optim
+
+from dataset import pad_modality
 from mctn_rnn.modules_seq import Seq2Seq, Decoder, Encoder, SentRegressor, Attention
 import torch
 
@@ -86,6 +88,7 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=1):
 
         text = text.to(device=device)
         audio = audio.to(device=device)
+        audio = pad_modality(audio, text.shape[2], audio.shape[2])
         vision = vision.to(device=device)
 
         src = text.permute(1, 0, 2)
