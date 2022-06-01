@@ -104,7 +104,7 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=1):
 
         optimizer.zero_grad()
 
-        decoded, cycled_decoded, regression_score = model(src, trg, label)
+        decoded, cycled_decoded, regression_score = model(src, trg, label, device)
 
         translate_loss = params['loss_dec_weight'] * criterion(decoded, trg)
         translate_cycle_loss = params['loss_dec_cycle_weight'] * criterion(cycled_decoded, src)

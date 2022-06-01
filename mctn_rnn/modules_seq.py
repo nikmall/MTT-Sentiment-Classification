@@ -140,7 +140,7 @@ class Seq2Seq(nn.Module):
         self.device = device
         self.regression = regression
 
-    def forward(self, src, trg, label, teacher_forcing_ratio=0.5):
+    def forward(self, src, trg, label, device, teacher_forcing_ratio=0.5):
         batch_size = src.shape[1]
         trg_len = trg.shape[0]
         src_len = src.shape[0]
