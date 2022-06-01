@@ -170,7 +170,7 @@ class Seq2Seq(nn.Module):
         # Cycle - 2nd iteration for cycling
         encoder_outputs_2, hidden_2, cell_2 = self.encoder(decoder_outputs)  # decoder_outputs is audio
 
-        input2 = torch.zeros(batch_size, self.decoder.emb_dim)
+        input2 = torch.zeros(batch_size, self.decoder.emb_dim).to(device=device)
         decoder_outputs_2 = torch.zeros(trg_len, batch_size, trg_vocab_size).to(self.device)
 
         for t in range(0, src_len):
