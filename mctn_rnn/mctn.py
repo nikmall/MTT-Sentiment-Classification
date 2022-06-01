@@ -94,6 +94,7 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=1):
         vision = vision.to(device=device)
 
         src = text.permute(1, 0, 2)
+        src = src.to(device=device)
         trg = audio.permute(1, 0, 2)
         label = batch_Y.permute(1, 0, 2)
         label = label.squeeze(0).to(device=device)
