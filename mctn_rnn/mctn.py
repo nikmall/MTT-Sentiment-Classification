@@ -86,9 +86,11 @@ def train(model, train_loader, optimizer, criterion, params, device, clip=1):
     for i_batch, (batch_X, batch_Y, batch_META) in enumerate(train_loader):
         sample_ind, text, audio, vision = batch_X
 
-        text = text.to(device=device)
-        audio = audio.to(device=device)
         audio = pad_modality(audio, text.shape[2], audio.shape[2])
+        text = text.to(device=device)
+
+        audio = audio.to(device=device)
+
         vision = vision.to(device=device)
 
         src = text.permute(1, 0, 2)
