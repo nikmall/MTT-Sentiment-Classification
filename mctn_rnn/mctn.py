@@ -1,4 +1,5 @@
 import time
+import timeit
 from torch import optim
 
 from dataset import pad_modality
@@ -133,6 +134,9 @@ def evaluate(model, valid_loader, criterion, params, device):
 
     with torch.no_grad():
         for i_batch, (batch_X, batch_Y, batch_META) in enumerate(valid_loader):
+
+            start = timeit.default_timer()
+
             sample_ind, text, audio, vision = batch_X
 
             audio = pad_modality(audio, text.shape[2], audio.shape[2])
@@ -160,6 +164,9 @@ def evaluate(model, valid_loader, criterion, params, device):
 
             preds.append(regression_score)
             truths.append(label)
+
+            end = timeit.default_timer()
+            print(f"Inference time for batch {i_batch} of size {sample_ind.shape} is  {end - start} seconds")
 
     preds = torch.cat(preds)
     truths = torch.cat(truths)
